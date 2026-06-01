@@ -10,16 +10,42 @@ import {
   Alert 
 } from 'react-native';
 
-export default function LoginScreen({ navigation}: any) {
+export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
+  
+  // 1. NOVO: Estado para guardar o texto de erro do e-mail
+  const [emailErro, setEmailErro] = useState<string>('');
+
+  // 2. NOVO: A nossa Regra Regex para validar e-mails
+  const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  // 3. NOVO: Função que verifica o e-mail em tempo real enquanto o usuário digita
+  const handleEmailChange = (texto: string) => {
+    setEmail(texto); // Atualiza o que aparece no campo
+
+    if (texto === '') {
+      setEmailErro(''); // Se estiver vazio, limpa o erro
+    } else if (!regexEmail.test(texto)) {
+      setEmailErro('Por favor, insira um e-mail válido.'); // Se estiver errado, avisa
+    } else {
+      setEmailErro(''); // Se estiver certo, tira o erro da tela
+    }
+  };
 
   const handleLogin = (): void => {
-    // Validação simples
+    // Validação de campos vazios
     if (!email || !password) {
       Alert.alert("Atenção", "Por favor, preencha e-mail e senha.");
       return;
     }
+
+    // 4. NOVO: Trava de segurança. Se o e-mail não passar no teste do Regex, o login é bloqueado
+    if (!regexEmail.test(email)) {
+      Alert.alert("Atenção", "O formato do e-mail está incorreto.");
+      return;
+    }
+
     // Aqui entraria a requisição HTTP para o seu backend (ex: API em Spring Boot)
     // Alert.alert("Login Solicitado", `Autenticando o usuário: ${email}`);
 
@@ -39,14 +65,17 @@ export default function LoginScreen({ navigation}: any) {
         <View style={styles.inputGroup}>
           <Text style={styles.label}>E-mail</Text>
           <TextInput
-            style={styles.input}
-            placeholder="Digite seu e-mail"
+            // Se houver erro, a borda do input fica vermelha
+            style={[styles.input, emailErro ? styles.inputErro : null]} 
+            placeholder="exemplo@email.com"
             placeholderTextColor="#A0AEC0"
             keyboardType="email-address"
             autoCapitalize="none"
             value={email}
-            onChangeText={setEmail}
+            onChangeText={handleEmailChange} // Chamando a nossa nova função aqui
           />
+          {/* 5. NOVO: Mostra a mensagem de erro na tela se a variável não estiver vazia */}
+          {emailErro ? <Text style={styles.textoErro}>{emailErro}</Text> : null}
         </View>
 
         <View style={styles.inputGroup}>
@@ -55,7 +84,7 @@ export default function LoginScreen({ navigation}: any) {
             style={styles.input}
             placeholder="Digite sua senha"
             placeholderTextColor="#A0AEC0"
-            secureTextEntry={true} // Esconde a senha com "bolinhas"
+            secureTextEntry={true} 
             value={password}
             onChangeText={setPassword}
           />
@@ -117,6 +146,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#2D3748',
   },
+  inputErro: {
+    borderColor: '#E53E3E', 
+  },
+  textoErro: {
+    color: '#E53E3E',
+    fontSize: 12,
+    marginTop: 4,
+    fontWeight: '500',
+  },
+  // FIM DOS NOVOS ESTILOS
   button: {
     backgroundColor: '#2B6CB0',
     paddingVertical: 14,
