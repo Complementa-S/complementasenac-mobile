@@ -33,7 +33,7 @@ export default function LoginScreen({ navigation}: any) {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.formContainer}>
-        <Text style={styles.title}>Bem-vindo de volta</Text>
+        <Text style={styles.title}>Bem-vindo ao Complementa+</Text>
         <Text style={styles.subtitle}>Faça login na sua conta para continuar</Text>
 
         <View style={styles.inputGroup}>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Alert, StatusBar } from 'react-native';
 
+
 export default function DashboardScreen() {
   const [count, setCount] = useState<number>(0);
 
@@ -17,49 +18,60 @@ export default function DashboardScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
+
+      <Text style={styles.nome}>Olá, Abra10!</Text>
+      <Text style={styles.inicio}>Início</Text>
+      <Text style={styles.historico}>Histórico</Text>
+      <Text style={styles.atividades}>Atividades</Text>
       
-      <Text style={styles.title}>Olá, Desenvolvedor!</Text>
-      <Text style={styles.subtitle}>
-        Esta é uma tela de teste para validar a estrutura do seu projeto.
-      </Text>
 
-      <View style={styles.card}>
-        <Text style={styles.cardText}>Séries de levantamento de peso concluídas:</Text>
-        <Text style={styles.counter}>{count}</Text>
-      </View>
-
-      <TouchableOpacity 
-        style={styles.button} 
-        onPress={handlePress}
-        activeOpacity={0.8}
-      >
-        <Text style={styles.buttonText}>Registrar Nova Série</Text>
-      </TouchableOpacity>
     </View>
-  );
-}
+  );}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F7F9FC',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
   },
-  title: {
+  nome: {
     fontSize: 28,
     fontWeight: 'bold',
     color: '#1A202C',
-    marginBottom: 8,
+    marginTop: 10,
+    left:10,
+    },
+    meuQuadrado: {
+    width: 100,           
+    height: 100,             
+    color: '#3182CE',
   },
-  subtitle: {
-    fontSize: 16,
+  inicio: {
+    fontSize: 20,
+    fontWeight: 'bold',
     color: '#4A5568',
-    textAlign: 'center',
-    marginBottom: 32,
-    lineHeight: 24,
+    position: 'absolute',
+    top: 700,
+    left: 20,
+    
+    },
+    historico: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#4A5568',
+    position: 'absolute',
+    top: 700,
+    right: 5,  
   },
+
+  atividades:{
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#4A5568',
+    position: 'absolute',
+    top: 700,
+    left: 140,  
+  },
+
   card: {
     backgroundColor: '#FFFFFF',
     padding: 24,
