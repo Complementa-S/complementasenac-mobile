@@ -6,6 +6,9 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import Login from './src/screens/LoginScreen';
 import Dashboard from './src/screens/DashboardScreen';
+import UploadScreen from './src/screens/UploadScreen';
+import DashboardScreen from './src/screens/DashboardScreen';
+import LoginScreen from './src/screens/LoginScreen';
 
 
 const Stack = createNativeStackNavigator();
@@ -13,20 +16,28 @@ const Stack = createNativeStackNavigator();
 export default function App() {
   return (
     <NavigationContainer>
+      {/* initialRouteName define qual tela abre primeiro quando o app liga */}
       <Stack.Navigator initialRouteName="Login">
         
         {/* Tela de Login (escondemos o cabeçalho padrão para ficar mais bonito) */}
         <Stack.Screen 
           name="Login" 
-          component={Login} 
+          component={LoginScreen}
           options={{ headerShown: false }} 
         />
         
         {/* Tela Home */}
         <Stack.Screen 
           name="Home" 
-          component={Dashboard} 
-          options={{ title: 'Início' }} 
+          component={DashboardScreen} 
+          options={{ headerShown: false }}
+        />
+        
+        {/* Tela de Upload */}
+        <Stack.Screen
+          name="Upload"
+          component={UploadScreen}
+          options={{ headerShown: false }}
         />
 
       </Stack.Navigator>
