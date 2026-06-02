@@ -41,6 +41,22 @@ export default function DashboardScreen() {
 
         </View>
       </View>
+      <View style={styles.cargaC}>
+        <Text style={styles.cargaCo}>Carga complementar</Text>
+        <Text style={styles.numeroest}>0/200h</Text>
+        <Text style={styles.concluido}>0% concluído</Text>
+        <Text style={styles.atiA}>Atividades aprovadas</Text>
+
+      </View>
+      
+      <View style={styles.statusA}>
+        <Text style={styles.statA}>Status do aluno</Text>
+        <Text style={styles.nomeC}>Abraão Vinícius Freitas de Melo</Text>
+        <Text style={styles.curso}>Curso:Escolinha do Neymar(RUMO AO HEXA!)</Text>
+        <Text style={styles.turma}>Turma:049</Text>
+      </View>
+
+
 
       <View style={styles.restoDaTela}>
       </View>
@@ -52,7 +68,7 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#ffffff',
   },
   headerAzul: {
     backgroundColor: '#1E3A8A',
@@ -61,12 +77,32 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
+    },
+    headerBranca: {
+    backgroundColor: '#1f1f4e',
+    paddingTop: 6,
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    },
+    cargaC: {
+    backgroundColor: '#2baf4c',
+    paddingTop: 6,
+    paddingHorizontal:30,
+    paddingBottom:50,
+    borderBottomLeftRadius:30,
+    borderBottomRightRadius: 30,
+    },
+    statusA: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#ffffff',
   },
   linhaSuperior: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 40,
   },
   saudacao: {
     fontSize: 24,
@@ -100,7 +136,7 @@ const styles = StyleSheet.create({
   linhaDivisoria: {
     width: 1,
     height: 40,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: 'rgba(66, 66, 66, 0.2)',
   },
   restoDaTela: {
     flex: 1,
