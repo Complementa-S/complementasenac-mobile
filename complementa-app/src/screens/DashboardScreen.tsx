@@ -2,6 +2,9 @@ import React from 'react';
 import { StyleSheet, Text, View, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+/* Import do "Cabeçario" de navegação */
+import Header from '../components/Header';
+
 export default function DashboardScreen() {
   return (
     <View style={styles.container}>
@@ -44,6 +47,8 @@ export default function DashboardScreen() {
 
       <View style={styles.restoDaTela}>
       </View>
+
+      <Header />
 
     </View>
   );
@@ -102,8 +107,10 @@ const styles = StyleSheet.create({
     height: 40,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
+
+/////// obs: resto de tela /////////
   restoDaTela: {
-    flex: 1,
+    flex: 0.9,
     padding: 24,
   }
 });
