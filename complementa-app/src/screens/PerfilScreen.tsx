@@ -1,13 +1,25 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, StatusBar, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  StyleSheet, Text, View, StatusBar, ScrollView,
+  TouchableOpacity, TextInput, Alert, ActivityIndicator,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Header from '../components/Header';
+
+const STORAGE_KEY = '@perfil_aluno';
 
 export default function PerfilScreen() {
   const navigation = useNavigation<any>();
+
   const [email, setEmail] = useState('usuario@gmail.com');
   const [telefone, setTelefone] = useState('');
+  const [salvando, setSalvando] = useState(false);
+  const [carregando, setCarregando] = useState(true);
+  const [alterado, setAlterado] = useState(false);
+  const [emailOriginal, setEmailOriginal] = useState('usuario@gmail.com');
+  const [telefoneOriginal, setTelefoneOriginal] = useState('');
 
   const nomeCompleto = 'Testealuno';
   const ingresso = '2023';
@@ -15,6 +27,59 @@ export default function PerfilScreen() {
   const departamento = 'Tecnologia da Informação';
   const matricula = '0020025227';
   const iniciais = nomeCompleto.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+
+  useEffect(() => {
+    const carregar = async () => {
+      try {
+        const dados = await AsyncStorage.getItem(STORAGE_KEY);
+        if (dados) {
+          const parsed = JSON.parse(dados);
+          setEmail(parsed.email || 'usuario@gmail.com');
+          setTelefone(parsed.telefone || '');
+          setEmailOriginal(parsed.email || 'usuario@gmail.com');
+          setTelefoneOriginal(parsed.telefone || '');
+        }
+      } catch (e) {
+        console.log('Erro ao carregar perfil:', e);
+      } finally {
+        setCarregando(false);
+      }
+    };
+    carregar();
+  }, []);
+
+  useEffect(() => {
+    setAlterado(email !== emailOriginal || telefone !== telefoneOriginal);
+  }, [email, telefone, emailOriginal, telefoneOriginal]);
+
+  const validarEmail = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+
+  const salvar = async () => {
+    if (!validarEmail(email)) {
+      Alert.alert('E-mail inválido', 'Informe um e-mail válido.');
+      return;
+    }
+    setSalvando(true);
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({ email, telefone }));
+      setEmailOriginal(email);
+      setTelefoneOriginal(telefone);
+      setAlterado(false);
+      Alert.alert('✓ Salvo!', 'Suas informações foram atualizadas com sucesso.');
+    } catch {
+      Alert.alert('Erro', 'Não foi possível salvar. Tente novamente.');
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  if (carregando) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#1E3A8A" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -64,9 +129,10 @@ export default function PerfilScreen() {
 
         <View style={styles.secao}>
           <Text style={styles.secaoTitulo}>Informações pessoais</Text>
-          <Text style={styles.secaoSubtitulo}>Apenas e-mail e telefone podem ser alterados.</Text>
+          <Text style={styles.secaoSubtitulo}>
+            Apenas e-mail e telefone podem ser alterados.
+          </Text>
 
-          {/* Somente leitura */}
           {[
             { label: 'Nome completo', valor: nomeCompleto },
             { label: 'Ingresso', valor: ingresso },
@@ -83,11 +149,12 @@ export default function PerfilScreen() {
             </View>
           ))}
 
-          {/* Editável - Email */}
           <View style={styles.campoContainer}>
-            <Text style={styles.campoLabel}>E-mail <Text style={styles.editavelTag}>editável</Text></Text>
+            <Text style={styles.campoLabel}>
+              E-mail <Text style={styles.editavelTag}>editável</Text>
+            </Text>
             <TextInput
-              style={styles.campoInput}
+              style={[styles.campoInput, !validarEmail(email) && email.length > 0 && styles.campoInputErro]}
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -95,11 +162,15 @@ export default function PerfilScreen() {
               placeholder="seu@email.com"
               placeholderTextColor="#9CA3AF"
             />
+            {!validarEmail(email) && email.length > 0 && (
+              <Text style={styles.erroTexto}>E-mail inválido</Text>
+            )}
           </View>
 
-          {/* Editável - Telefone */}
           <View style={styles.campoContainer}>
-            <Text style={styles.campoLabel}>Telefone <Text style={styles.editavelTag}>editável</Text></Text>
+            <Text style={styles.campoLabel}>
+              Telefone <Text style={styles.editavelTag}>editável</Text>
+            </Text>
             <TextInput
               style={styles.campoInput}
               value={telefone}
@@ -111,9 +182,21 @@ export default function PerfilScreen() {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.botaoSalvar} onPress={() => Alert.alert('Salvo!', 'Dados atualizados com sucesso.')}>
-          <Ionicons name="checkmark-circle-outline" size={20} color="#FFFFFF" />
-          <Text style={styles.botaoSalvarTexto}>Salvar alterações</Text>
+        <TouchableOpacity
+          style={[styles.botaoSalvar, !alterado && styles.botaoSalvarDesabilitado]}
+          onPress={salvar}
+          disabled={salvando || !alterado}
+        >
+          {salvando ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <>
+              <Ionicons name="checkmark-circle-outline" size={20} color="#FFFFFF" />
+              <Text style={styles.botaoSalvarTexto}>
+                {alterado ? 'Salvar alterações' : 'Nenhuma alteração'}
+              </Text>
+            </>
+          )}
         </TouchableOpacity>
 
         <View style={{ height: 24 }} />
@@ -125,6 +208,7 @@ export default function PerfilScreen() {
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F3F4F6' },
   container: { flex: 1, backgroundColor: '#F3F4F6' },
   headerAzul: {
     backgroundColor: '#1E3A8A', paddingTop: 60, paddingHorizontal: 24, paddingBottom: 24,
@@ -162,9 +246,23 @@ const styles = StyleSheet.create({
   campoContainer: { marginBottom: 14 },
   campoLabel: { fontSize: 12, color: '#6B7280', marginBottom: 6, fontWeight: '500' },
   editavelTag: { color: '#10B981', fontWeight: '600', fontSize: 11 },
-  campoInput: { borderWidth: 1.5, borderColor: '#3B82F6', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, color: '#111827', backgroundColor: '#F0F9FF' },
-  campoReadOnly: { borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, backgroundColor: '#F9FAFB', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  campoInput: {
+    borderWidth: 1.5, borderColor: '#3B82F6', borderRadius: 10,
+    paddingHorizontal: 14, paddingVertical: 12, fontSize: 14,
+    color: '#111827', backgroundColor: '#F0F9FF',
+  },
+  campoInputErro: { borderColor: '#EF4444', backgroundColor: '#FEF2F2' },
+  erroTexto: { fontSize: 11, color: '#EF4444', marginTop: 4 },
+  campoReadOnly: {
+    borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10,
+    paddingHorizontal: 14, paddingVertical: 12, backgroundColor: '#F9FAFB',
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+  },
   campoReadOnlyTexto: { fontSize: 14, color: '#9CA3AF', flex: 1 },
-  botaoSalvar: { backgroundColor: '#1E3A8A', borderRadius: 14, paddingVertical: 16, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 },
+  botaoSalvar: {
+    backgroundColor: '#1E3A8A', borderRadius: 14, paddingVertical: 16,
+    flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8,
+  },
+  botaoSalvarDesabilitado: { backgroundColor: '#93C5FD' },
   botaoSalvarTexto: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
 });

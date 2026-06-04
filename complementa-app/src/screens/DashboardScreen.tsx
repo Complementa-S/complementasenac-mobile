@@ -42,14 +42,7 @@ export default function DashboardScreen() {
       <View style={styles.restoDaTela}>
         <View style={styles.gridCards}>
 
-          <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Relatorio')}>
-            <View style={styles.cardIconContainer}>
-              <Ionicons name="checkmark-done-outline" size={28} color="#1E3A8A" />
-            </View>
-            <Text style={styles.cardTitulo}>Minhas Tarefas</Text>
-            <Text style={styles.cardSubtitulo}>34 novas tarefas</Text>
-          </TouchableOpacity>
-
+          {/* Card - Carga Complementar */}
           <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('CargaComplementar')}>
             <View style={styles.cardIconContainer}>
               <Ionicons name="time-outline" size={28} color="#1E3A8A" />
@@ -58,6 +51,7 @@ export default function DashboardScreen() {
             <Text style={styles.cardSubtitulo}>0/200h concluídas</Text>
           </TouchableOpacity>
 
+          {/* Card - Relatório */}
           <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Relatorio')}>
             <View style={styles.cardIconContainer}>
               <Ionicons name="bar-chart-outline" size={28} color="#1E3A8A" />
@@ -66,6 +60,7 @@ export default function DashboardScreen() {
             <Text style={styles.cardSubtitulo}>Ver todos os relatórios</Text>
           </TouchableOpacity>
 
+          {/* Card - Meu Perfil */}
           <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Perfil')}>
             <View style={styles.cardIconContainer}>
               <Ionicons name="person-outline" size={28} color="#1E3A8A" />
