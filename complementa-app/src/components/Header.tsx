@@ -1,79 +1,37 @@
-
-
-/////  Botões de Navegação  /////
-
 import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Platform } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { View, TouchableOpacity, StyleSheet, Text } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation, useRoute } from '@react-navigation/native';
 
 export default function Header() {
-  // O hook useNavigation nos dá o poder de navegar de qualquer componente
-  // Colocamos <any> temporariamente para facilitar os testes
-  const navigation = useNavigation<any>(); 
+  const navigation = useNavigation<any>();
+  const route = useRoute();
+
+  const tabs = [
+    { name: 'Dashboard', icon: 'home-outline', activeIcon: 'home', label: 'Início' },
+    { name: 'CargaComplementar', icon: 'time-outline', activeIcon: 'time', label: 'Horas' },
+    { name: 'Relatorio', icon: 'bar-chart-outline', activeIcon: 'bar-chart', label: 'Relatório' },
+    { name: 'Perfil', icon: 'person-outline', activeIcon: 'person', label: 'Perfil' },
+  ];
 
   return (
-    <View style={styles.headerContainer}>
-      {/* Botão para ir para a Dashboard */}
-      <TouchableOpacity 
-        style={styles.navButton}
-        onPress={() => navigation.navigate('Home')}
-      >
-        <Text style={styles.navButtonText}>Início</Text>
-      </TouchableOpacity>
-
-      {/* Botão para ir para a tela de Upload */}
-      <TouchableOpacity 
-        style={styles.navButton}
-        onPress={() => navigation.navigate('Upload')}
-      >
-        <Text style={styles.navButtonText}>Enviar Arquivo</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity 
-        style={styles.logoutButton}
-        onPress={() => navigation.navigate('Login')}
-      >
-        <Text style={styles.logoutButton}>Sair</Text>
-      </TouchableOpacity>      
+    <View style={styles.container}>
+      {tabs.map((tab) => {
+        const isActive = route.name === tab.name;
+        return (
+          <TouchableOpacity key={tab.name} style={styles.tab} onPress={() => navigation.navigate(tab.name)}>
+            <Ionicons name={(isActive ? tab.activeIcon : tab.icon) as any} size={24} color={isActive ? '#1E3A8A' : '#9CA3AF'} />
+            <Text style={[styles.label, isActive && styles.labelActive]}>{tab.label}</Text>
+          </TouchableOpacity>
+        );
+      })}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  headerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    backgroundColor: '#1E3A8A', // Cor do cabeçalho
-    paddingTop: Platform.OS === 'ios' ? 50 : 30, // Dá espaço para a barra de status do celular
-    paddingBottom: 30,
-    paddingHorizontal: 24,
-    width: '100%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5, // Sombra no Android
-    borderRadius: 80,
-  },
-  navButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-  },
-  navButtonText: {
-    backgroundColor: '#2B6CB0',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    textAlign: 'center',
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-    logoutButton: {
-    backgroundColor: '#E53E3E', // Cor vermelha para indicar saída
-    paddingVertical: 6,
-    // paddingHorizontal: 14,
-    borderRadius: 6,
-  },
+  container: { flexDirection: 'row', backgroundColor: '#FFFFFF', borderTopWidth: 1, borderTopColor: '#E5E7EB', paddingBottom: 20, paddingTop: 10 },
+  tab: { flex: 1, alignItems: 'center', gap: 4 },
+  label: { fontSize: 10, color: '#9CA3AF' },
+  labelActive: { color: '#1E3A8A', fontWeight: '600' },
 });
