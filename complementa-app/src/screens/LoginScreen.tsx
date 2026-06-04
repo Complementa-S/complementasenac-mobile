@@ -50,7 +50,7 @@ export default function LoginScreen({ navigation }: any) {
     // Alert.alert("Login Solicitado", `Autenticando o usuário: ${email}`);
 
     // Navega para a tela que chamamos de "Home" lá no App.tsx
-    navigation.navigate('Home'); 
+    navigation.navigate('Dashboard'); 
   };
 
   return (
