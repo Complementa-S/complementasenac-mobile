@@ -21,7 +21,7 @@ export default function PerfilScreen() {
   const [emailOriginal, setEmailOriginal] = useState('usuario@gmail.com');
   const [telefoneOriginal, setTelefoneOriginal] = useState('');
 
-  const nomeCompleto = 'Testealuno';
+  const nomeCompleto = 'Abra10 Joga Fácil';
   const ingresso = '2023';
   const curso = 'Análise e Desenvolvimento de Sistemas';
   const departamento = 'Tecnologia da Informação';
