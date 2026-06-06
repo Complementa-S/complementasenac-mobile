@@ -6,7 +6,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import * as DocumentPicker from 'expo-document-picker';
-import Header from '../components/Header';
+import Footer from '../components/Footer';
 
 type Arquivo = {
   nome: string;
@@ -337,7 +337,7 @@ export default function CargaComplementarScreen() {
         </View>
       </Modal>
 
-      <Header />
+      <Footer />
     </View>
   );
 }

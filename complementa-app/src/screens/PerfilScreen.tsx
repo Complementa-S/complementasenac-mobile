@@ -6,7 +6,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Header from '../components/Header';
+import Footer from '../components/Footer';
 
 const STORAGE_KEY = '@perfil_aluno';
 
@@ -202,7 +202,7 @@ export default function PerfilScreen() {
         <View style={{ height: 24 }} />
       </ScrollView>
 
-      <Header />
+      <Footer />
     </View>
   );
 }
