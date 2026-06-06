@@ -4,7 +4,7 @@ import { StyleSheet, Text, View, TouchableOpacity, Alert } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 
 /* Import do "Cabeçario" de navegação */
-import Header from '../components/Header';
+import Footer from '../components/Footer';
 
 export default function UploadScreen() {
   // Estados para guardar o nome e o caminho do arquivo selecionado
@@ -76,7 +76,7 @@ export default function UploadScreen() {
     <View style={styles.restoDaTela}>
     </View>
 
-      <Header />
+      <Footer />
 
     </View>
   );

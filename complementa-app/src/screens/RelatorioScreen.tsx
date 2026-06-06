@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { StyleSheet, Text, View, StatusBar, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import Header from '../components/Header';
+import Footer from '../components/Footer';
 
 type Atividade = {
   id: string;
@@ -115,7 +115,7 @@ export default function RelatorioScreen() {
         <View style={{ height: 20 }} />
       </ScrollView>
 
-      <Header />
+      <Footer />
     </View>
   );
 }
