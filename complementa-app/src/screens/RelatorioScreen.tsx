@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, StatusBar, ScrollView, TouchableOpacity } from 'react-native';
+
+// Instale: npm install react-native-safe-area-context
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import Footer from '../components/Footer';
@@ -41,82 +45,84 @@ export default function RelatorioScreen() {
   const filtradas = abaAtiva === 'Todas' ? atividades : atividades.filter(a => a.status === abaAtiva);
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1E3A8A" />
+    <SafeAreaView style={styles.container}>
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#1E3A8A" />
 
-      <View style={styles.headerAzul}>
-        <View style={styles.linhaSuperior}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back-outline" size={24} color="#FFFFFF" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitulo}>Histórico Completo</Text>
-          <Ionicons name="notifications-outline" size={24} color="#FFFFFF" />
-        </View>
-        <Text style={styles.headerSubtitulo}>Todas as atividades submetidas</Text>
-      </View>
-
-      <View style={styles.resumoContainer}>
-        {[
-          { icone: 'list-outline', numero: atividades.length, label: 'Registros' },
-          { icone: 'time-outline', numero: `${totalHoras}h`, label: 'Horas lançadas' },
-          { icone: 'hourglass-outline', numero: pendentes, label: 'Pendentes' },
-        ].map((item, i) => (
-          <View key={i} style={styles.cardResumo}>
-            <Ionicons name={item.icone as any} size={18} color="#6B7280" style={{ marginBottom: 4 }} />
-            <Text style={styles.resumoNumero}>{item.numero}</Text>
-            <Text style={styles.resumoLabel}>{item.label}</Text>
+        <View style={styles.headerAzul}>
+          <View style={styles.linhaSuperior}>
+            <TouchableOpacity onPress={() => navigation.goBack()}>
+              <Ionicons name="arrow-back-outline" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitulo}>Histórico Completo</Text>
+            <Ionicons name="notifications-outline" size={24} color="#FFFFFF" />
           </View>
-        ))}
-      </View>
-
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.abasScroll} contentContainerStyle={styles.abasContainer}>
-        {abas.map(aba => (
-          <TouchableOpacity key={aba} style={[styles.aba, abaAtiva === aba && styles.abaAtiva]} onPress={() => setAbaAtiva(aba)}>
-            <Text style={[styles.abaTexto, abaAtiva === aba && styles.abaTextoAtivo]}>{aba}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      <ScrollView style={styles.lista} showsVerticalScrollIndicator={false}>
-        <View style={styles.listaCabecalho}>
-          <Text style={styles.listaTitulo}>Timeline de atividades</Text>
-          <Text style={styles.listaSubtitulo}>{aprovadas} aprovadas · {atividades.filter(a => a.status === 'Indeferida').length} indeferidas</Text>
+          <Text style={styles.headerSubtitulo}>Todas as atividades submetidas</Text>
         </View>
 
-        {filtradas.map((item, index) => {
-          const cfg = statusConfig[item.status];
-          return (
-            <View key={index} style={styles.cardAtividade}>
-              <View style={styles.atividadeLinha}>
-                <View style={styles.atividadeIcone}>
-                  <Ionicons name="document-text-outline" size={18} color="#1E3A8A" />
-                </View>
-                <View style={styles.atividadeInfo}>
-                  <Text style={styles.atividadeTitulo}>{item.titulo}</Text>
-                  <Text style={styles.atividadeCategoria}>{item.categoria}</Text>
-                  <View style={[styles.badge, { backgroundColor: cfg.bg }]}>
-                    <Text style={[styles.badgeTexto, { color: cfg.cor }]}>{cfg.texto}</Text>
+        <View style={styles.resumoContainer}>
+          {[
+            { icone: 'list-outline', numero: atividades.length, label: 'Registros' },
+            { icone: 'time-outline', numero: `${totalHoras}h`, label: 'Horas lançadas' },
+            { icone: 'hourglass-outline', numero: pendentes, label: 'Pendentes' },
+          ].map((item, i) => (
+            <View key={i} style={styles.cardResumo}>
+              <Ionicons name={item.icone as any} size={18} color="#6B7280" style={{ marginBottom: 4 }} />
+              <Text style={styles.resumoNumero}>{item.numero}</Text>
+              <Text style={styles.resumoLabel}>{item.label}</Text>
+            </View>
+          ))}
+        </View>
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.abasScroll} contentContainerStyle={styles.abasContainer}>
+          {abas.map(aba => (
+            <TouchableOpacity key={aba} style={[styles.aba, abaAtiva === aba && styles.abaAtiva]} onPress={() => setAbaAtiva(aba)}>
+              <Text style={[styles.abaTexto, abaAtiva === aba && styles.abaTextoAtivo]}>{aba}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        <ScrollView style={styles.lista} showsVerticalScrollIndicator={false}>
+          <View style={styles.listaCabecalho}>
+            <Text style={styles.listaTitulo}>Timeline de atividades</Text>
+            <Text style={styles.listaSubtitulo}>{aprovadas} aprovadas · {atividades.filter(a => a.status === 'Indeferida').length} indeferidas</Text>
+          </View>
+
+          {filtradas.map((item, index) => {
+            const cfg = statusConfig[item.status];
+            return (
+              <View key={index} style={styles.cardAtividade}>
+                <View style={styles.atividadeLinha}>
+                  <View style={styles.atividadeIcone}>
+                    <Ionicons name="document-text-outline" size={18} color="#1E3A8A" />
                   </View>
-                  {item.motivoRecusa && (
-                    <View style={styles.motivoContainer}>
-                      <Text style={styles.motivoTexto}>Motivo da recusa: {item.motivoRecusa}</Text>
+                  <View style={styles.atividadeInfo}>
+                    <Text style={styles.atividadeTitulo}>{item.titulo}</Text>
+                    <Text style={styles.atividadeCategoria}>{item.categoria}</Text>
+                    <View style={[styles.badge, { backgroundColor: cfg.bg }]}>
+                      <Text style={[styles.badgeTexto, { color: cfg.cor }]}>{cfg.texto}</Text>
                     </View>
-                  )}
-                </View>
-                <View style={styles.atividadeDireita}>
-                  <Text style={styles.atividadeData}>{item.data}</Text>
-                  <Text style={styles.atividadeHoras}>{item.horas}</Text>
-                  <Text style={styles.atividadeCategoriaTag}>{item.categoria}</Text>
+                    {item.motivoRecusa && (
+                      <View style={styles.motivoContainer}>
+                        <Text style={styles.motivoTexto}>Motivo da recusa: {item.motivoRecusa}</Text>
+                      </View>
+                    )}
+                  </View>
+                  <View style={styles.atividadeDireita}>
+                    <Text style={styles.atividadeData}>{item.data}</Text>
+                    <Text style={styles.atividadeHoras}>{item.horas}</Text>
+                    <Text style={styles.atividadeCategoriaTag}>{item.categoria}</Text>
+                  </View>
                 </View>
               </View>
-            </View>
-          );
-        })}
-        <View style={{ height: 20 }} />
-      </ScrollView>
+            );
+          })}
+          <View style={{ height: 20 }} />
+        </ScrollView>
 
-      <Footer />
-    </View>
+        <Footer />
+      </View>
+    </SafeAreaView>
   );
 }
 
