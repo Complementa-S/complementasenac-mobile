@@ -1,5 +1,5 @@
 const API_BASE = (
-  (globalThis as any)?.process?.env?.EXPO_PUBLIC_API_BASE || 'http://localhost:8080'
+  (globalThis as any)?.process?.env?.EXPO_PUBLIC_API_BASE || 'https://complementasenac.onrender.com'
 ).replace(/\/+$/, '');
 
 export function apiUrl(path: string) {

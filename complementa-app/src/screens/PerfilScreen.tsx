@@ -3,6 +3,10 @@ import {
   StyleSheet, Text, View, StatusBar, ScrollView,
   TouchableOpacity, TextInput, Alert, ActivityIndicator,
 } from 'react-native';
+
+// Instale: npm install react-native-safe-area-context
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -82,128 +86,130 @@ export default function PerfilScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1E3A8A" />
+    <SafeAreaView style={styles.container}>
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#1E3A8A" />
 
-      <View style={styles.headerAzul}>
-        <View style={styles.linhaSuperior}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back-outline" size={24} color="#FFFFFF" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitulo}>Meu Perfil</Text>
-          <Ionicons name="notifications-outline" size={24} color="#FFFFFF" />
-        </View>
-      </View>
-
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-
-        <View style={styles.cardAluno}>
-          <View style={styles.avatarContainer}>
-            <Text style={styles.avatarTexto}>{iniciais}</Text>
-          </View>
-          <Text style={styles.alunoNome}>{nomeCompleto}</Text>
-          <Text style={styles.alunoEmail}>{email}</Text>
-          <View style={styles.badgeAluno}>
-            <Ionicons name="id-card-outline" size={13} color="#1E3A8A" />
-            <Text style={styles.badgeAlunoTexto}>Aluno</Text>
-          </View>
-          <View style={styles.progressoContainer}>
-            <Text style={styles.progressoLabel}>Progresso de horas</Text>
-            <Text style={styles.progressoValor}>0/200h</Text>
-          </View>
-          <View style={styles.barraFundo}>
-            <View style={[styles.barraPreenchida, { width: '0%' }]} />
-          </View>
-          <View style={styles.statsContainer}>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumero}>8</Text>
-              <Text style={styles.statLabel}>Atividades</Text>
-            </View>
-            <View style={styles.statDivisor} />
-            <View style={styles.statItem}>
-              <Text style={styles.statNumero}>4</Text>
-              <Text style={styles.statLabel}>Aprovadas</Text>
-            </View>
+        <View style={styles.headerAzul}>
+          <View style={styles.linhaSuperior}>
+            <TouchableOpacity onPress={() => navigation.goBack()}>
+              <Ionicons name="arrow-back-outline" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitulo}>Meu Perfil</Text>
+            <Ionicons name="notifications-outline" size={24} color="#FFFFFF" />
           </View>
         </View>
 
-        <View style={styles.secao}>
-          <Text style={styles.secaoTitulo}>Informações pessoais</Text>
-          <Text style={styles.secaoSubtitulo}>
-            Apenas e-mail e telefone podem ser alterados.
-          </Text>
+        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
 
-          {[
-            { label: 'Nome completo', valor: nomeCompleto },
-            { label: 'Ingresso', valor: ingresso },
-            { label: 'Curso', valor: curso },
-            { label: 'Departamento', valor: departamento },
-            { label: 'Matrícula / Registro', valor: matricula },
-          ].map((campo, i) => (
-            <View key={i} style={styles.campoContainer}>
-              <Text style={styles.campoLabel}>{campo.label}</Text>
-              <View style={styles.campoReadOnly}>
-                <Text style={styles.campoReadOnlyTexto}>{campo.valor}</Text>
-                <Ionicons name="lock-closed-outline" size={14} color="#9CA3AF" />
+          <View style={styles.cardAluno}>
+            <View style={styles.avatarContainer}>
+              <Text style={styles.avatarTexto}>{iniciais}</Text>
+            </View>
+            <Text style={styles.alunoNome}>{nomeCompleto}</Text>
+            <Text style={styles.alunoEmail}>{email}</Text>
+            <View style={styles.badgeAluno}>
+              <Ionicons name="id-card-outline" size={13} color="#1E3A8A" />
+              <Text style={styles.badgeAlunoTexto}>Aluno</Text>
+            </View>
+            <View style={styles.progressoContainer}>
+              <Text style={styles.progressoLabel}>Progresso de horas</Text>
+              <Text style={styles.progressoValor}>0/200h</Text>
+            </View>
+            <View style={styles.barraFundo}>
+              <View style={[styles.barraPreenchida, { width: '0%' }]} />
+            </View>
+            <View style={styles.statsContainer}>
+              <View style={styles.statItem}>
+                <Text style={styles.statNumero}>8</Text>
+                <Text style={styles.statLabel}>Atividades</Text>
+              </View>
+              <View style={styles.statDivisor} />
+              <View style={styles.statItem}>
+                <Text style={styles.statNumero}>4</Text>
+                <Text style={styles.statLabel}>Aprovadas</Text>
               </View>
             </View>
-          ))}
-
-          <View style={styles.campoContainer}>
-            <Text style={styles.campoLabel}>
-              E-mail <Text style={styles.editavelTag}>editável</Text>
-            </Text>
-            <TextInput
-              style={[styles.campoInput, !validarEmail(email) && email.length > 0 && styles.campoInputErro]}
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              placeholder="seu@email.com"
-              placeholderTextColor="#9CA3AF"
-            />
-            {!validarEmail(email) && email.length > 0 && (
-              <Text style={styles.erroTexto}>E-mail inválido</Text>
-            )}
           </View>
 
-          <View style={styles.campoContainer}>
-            <Text style={styles.campoLabel}>
-              Telefone <Text style={styles.editavelTag}>editável</Text>
+          <View style={styles.secao}>
+            <Text style={styles.secaoTitulo}>Informações pessoais</Text>
+            <Text style={styles.secaoSubtitulo}>
+              Apenas e-mail e telefone podem ser alterados.
             </Text>
-            <TextInput
-              style={styles.campoInput}
-              value={telefone}
-              onChangeText={setTelefone}
-              keyboardType="phone-pad"
-              placeholder="(00) 00000-0000"
-              placeholderTextColor="#9CA3AF"
-            />
-          </View>
-        </View>
 
-        <TouchableOpacity
-          style={[styles.botaoSalvar, !alterado && styles.botaoSalvarDesabilitado]}
-          onPress={salvar}
-          disabled={salvando || !alterado}
-        >
-          {salvando ? (
-            <ActivityIndicator color="#FFFFFF" />
-          ) : (
-            <>
-              <Ionicons name="checkmark-circle-outline" size={20} color="#FFFFFF" />
-              <Text style={styles.botaoSalvarTexto}>
-                {alterado ? 'Salvar alterações' : 'Nenhuma alteração'}
+            {[
+              { label: 'Nome completo', valor: nomeCompleto },
+              { label: 'Ingresso', valor: ingresso },
+              { label: 'Curso', valor: curso },
+              { label: 'Departamento', valor: departamento },
+              { label: 'Matrícula / Registro', valor: matricula },
+            ].map((campo, i) => (
+              <View key={i} style={styles.campoContainer}>
+                <Text style={styles.campoLabel}>{campo.label}</Text>
+                <View style={styles.campoReadOnly}>
+                  <Text style={styles.campoReadOnlyTexto}>{campo.valor}</Text>
+                  <Ionicons name="lock-closed-outline" size={14} color="#9CA3AF" />
+                </View>
+              </View>
+            ))}
+
+            <View style={styles.campoContainer}>
+              <Text style={styles.campoLabel}>
+                E-mail <Text style={styles.editavelTag}>editável</Text>
               </Text>
-            </>
-          )}
-        </TouchableOpacity>
+              <TextInput
+                style={[styles.campoInput, !validarEmail(email) && email.length > 0 && styles.campoInputErro]}
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                placeholder="seu@email.com"
+                placeholderTextColor="#9CA3AF"
+              />
+              {!validarEmail(email) && email.length > 0 && (
+                <Text style={styles.erroTexto}>E-mail inválido</Text>
+              )}
+            </View>
 
-        <View style={{ height: 24 }} />
-      </ScrollView>
+            <View style={styles.campoContainer}>
+              <Text style={styles.campoLabel}>
+                Telefone <Text style={styles.editavelTag}>editável</Text>
+              </Text>
+              <TextInput
+                style={styles.campoInput}
+                value={telefone}
+                onChangeText={setTelefone}
+                keyboardType="phone-pad"
+                placeholder="(00) 00000-0000"
+                placeholderTextColor="#9CA3AF"
+              />
+            </View>
+          </View>
 
-      <Footer />
-    </View>
+          <TouchableOpacity
+            style={[styles.botaoSalvar, !alterado && styles.botaoSalvarDesabilitado]}
+            onPress={salvar}
+            disabled={salvando || !alterado}
+          >
+            {salvando ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <>
+                <Ionicons name="checkmark-circle-outline" size={20} color="#FFFFFF" />
+                <Text style={styles.botaoSalvarTexto}>
+                  {alterado ? 'Salvar alterações' : 'Nenhuma alteração'}
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+
+          <View style={{ height: 24 }} />
+        </ScrollView>
+
+        <Footer />
+      </View>
+    </SafeAreaView>
   );
 }
 
