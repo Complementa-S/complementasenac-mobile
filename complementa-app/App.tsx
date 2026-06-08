@@ -7,7 +7,6 @@ import Login from './src/screens/LoginScreen';
 import Dashboard from './src/screens/DashboardScreen';
 import CargaComplementar from './src/screens/CargaComplementarScreen';
 import Relatorio from './src/screens/RelatorioScreen';
-import Perfil from './src/screens/PerfilScreen';
 import Upload from './src/screens/UploadScreen';
 
 const Stack = createNativeStackNavigator();
@@ -22,7 +21,6 @@ export default function App() {
           <Stack.Screen name="CargaComplementar" component={CargaComplementar} options={{ headerShown: false }} />
           <Stack.Screen name="Upload"            component={Upload}         options={{ headerShown: false }} />
           <Stack.Screen name="Relatorio"         component={Relatorio}      options={{ headerShown: false }} />
-          <Stack.Screen name="Perfil"            component={Perfil}         options={{ headerShown: false }} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

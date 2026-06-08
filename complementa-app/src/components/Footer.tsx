@@ -13,7 +13,6 @@ export default function Footer() {
     { name: 'Dashboard',         icon: 'home-outline',      activeIcon: 'home',      label: 'Início'    },
     { name: 'CargaComplementar', icon: 'time-outline',      activeIcon: 'time',      label: 'Horas'     },
     { name: 'Relatorio',         icon: 'bar-chart-outline', activeIcon: 'bar-chart', label: 'Relatório' },
-    { name: 'Perfil',            icon: 'person-outline',    activeIcon: 'person',    label: 'Perfil'    },
   ];
 
   return (
