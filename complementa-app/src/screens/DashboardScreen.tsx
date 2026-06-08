@@ -2,7 +2,8 @@ import React from 'react';
 import { StyleSheet, Text, View, StatusBar, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-
+import { useNavigation} from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Footer from '../components/Footer';
 
 export default function DashboardScreen() {
@@ -11,6 +12,8 @@ export default function DashboardScreen() {
     curso: 'Análise e Desenvolvimento de Sistemas',
     matricula: '0020010',
   };
+
+  const navigation = useNavigation<NativeStackNavigationProp<any>>();
 
   const horasConcluidas = 100;
   const horasTotal = 200;
@@ -51,7 +54,8 @@ export default function DashboardScreen() {
 
         {/* ── Card Carga Complementar ── */}
         <View style={styles.cardWrapper}>
-          <TouchableOpacity style={styles.card} activeOpacity={0.85}>
+          <TouchableOpacity style={styles.card} activeOpacity={0.85}
+            onPress={() => navigation.navigate('CargaComplementar')}>
             <View style={styles.cardHeader}>
               <Text style={styles.cardTitulo}>Carga complementar</Text>
               <View style={styles.badge}>
@@ -72,6 +76,7 @@ export default function DashboardScreen() {
               <Text style={styles.footerTexto}>{percentual}% concluído</Text>
               <Text style={styles.footerTexto}>{atividadesAprovadas} atividades aprovadas</Text>
             </View>
+            
           </TouchableOpacity>
         </View>
       </View>
