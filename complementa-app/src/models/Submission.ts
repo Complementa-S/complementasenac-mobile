@@ -12,6 +12,7 @@ export type Submission = {
   aluno: string;
   titulo: string;
   categoria: string;
+  curso: string;
   horasInformadas: number;
   horasAprovadas: number;
   status: SubmissionStatus;
@@ -23,7 +24,7 @@ export type Submission = {
 export type CreateSubmissionInput = {
   titulo: string;
   categoria: string;
+  curso: string;
   horas: number;
   file: PickedFile;
 };
-

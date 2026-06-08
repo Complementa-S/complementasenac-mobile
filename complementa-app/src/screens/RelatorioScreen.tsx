@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, StatusBar, ScrollView, TouchableOpacity } from 'react-native';
-
-// Instale: npm install react-native-safe-area-context
+import {
+  StyleSheet, Text, View, StatusBar, ScrollView,
+  TouchableOpacity, Modal, Pressable,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import Footer from '../components/Footer';
@@ -16,33 +16,93 @@ type Atividade = {
   horas: string;
   status: 'Aprovado' | 'Indeferida' | 'Pendente' | 'Em Análise';
   motivoRecusa?: string;
+  descricao?: string;
+  responsavel?: string;
 };
 
 const atividades: Atividade[] = [
-  { id: 'SER13312', titulo: 'Senac Confia', categoria: 'Extensão', data: '11/05/2026', horas: '10h', status: 'Aprovado' },
-  { id: 'SER13313', titulo: 'Curso Python avançado', categoria: 'Ensino', data: '25/08/2025', horas: '10h', status: 'Indeferida', motivoRecusa: 'Documentação incompleta' },
-  { id: 'SER13314', titulo: 'Projeto Banco de Dados Firebase', categoria: 'Extensão', data: '14/05/2026', horas: '20h', status: 'Aprovado' },
-  { id: 'SER13315', titulo: 'Um Grande Projeto Nacional', categoria: 'Extensão', data: '22/11/2022', horas: '1231h', status: 'Aprovado' },
-  { id: 'SER13316', titulo: 'Documentação', categoria: 'Extensão', data: '22/03/2022', horas: '13h', status: 'Pendente' },
+  {
+    id: 'SER13312',
+    titulo: 'Senac Confia',
+    categoria: 'Extensão',
+    data: '11/05/2026',
+    horas: '10h',
+    status: 'Aprovado',
+    descricao: 'Participação no programa Senac Confia como voluntário.',
+    responsavel: 'Prof. João Silva',
+  },
+  {
+    id: 'SER13313',
+    titulo: 'Curso Python avançado',
+    categoria: 'Ensino',
+    data: '25/08/2025',
+    horas: '10h',
+    status: 'Indeferida',
+    motivoRecusa: 'Documentação incompleta',
+    descricao: 'Curso de Python com foco em automação e análise de dados.',
+    responsavel: 'Prof. Maria Souza',
+  },
+  {
+    id: 'SER13314',
+    titulo: 'Projeto Banco de Dados Firebase',
+    categoria: 'Extensão',
+    data: '14/05/2026',
+    horas: '20h',
+    status: 'Aprovado',
+    descricao: 'Desenvolvimento de sistema utilizando Firebase como banco de dados em nuvem.',
+    responsavel: 'Prof. Carlos Lima',
+  },
+  {
+    id: 'SER13315',
+    titulo: 'Um Grande Projeto Nacional',
+    categoria: 'Extensão',
+    data: '22/11/2022',
+    horas: '123h',
+    status: 'Aprovado',
+    descricao: 'Projeto de grande escala em parceria com instituições nacionais.',
+    responsavel: 'Prof. Ana Costa',
+  },
+  {
+    id: 'SER13316',
+    titulo: 'Documentação',
+    categoria: 'Extensão',
+    data: '22/03/2022',
+    horas: '13h',
+    status: 'Pendente',
+    descricao: 'Elaboração de documentação técnica para o projeto institucional.',
+    responsavel: 'Prof. Roberto Alves',
+  },
 ];
 
 const abas = ['Todas', 'Aprovado', 'Indeferida', 'Pendente', 'Em Análise'];
 
-const statusConfig: Record<string, { bg: string; texto: string; cor: string }> = {
-  Aprovado:     { bg: '#D1FAE5', texto: 'Aprovado',    cor: '#065F46' },
-  Indeferida:   { bg: '#FEE2E2', texto: 'Indeferida',  cor: '#991B1B' },
-  Pendente:     { bg: '#FEF9C3', texto: 'Pendente',    cor: '#92400E' },
-  'Em Análise': { bg: '#DBEAFE', texto: 'Em Análise',  cor: '#1E40AF' },
+const statusConfig: Record<string, { bg: string; texto: string; cor: string; icone: string }> = {
+  Aprovado:     { bg: '#D1FAE5', texto: 'Aprovado',    cor: '#065F46', icone: 'checkmark-circle-outline' },
+  Indeferida:   { bg: '#FEE2E2', texto: 'Indeferida',  cor: '#991B1B', icone: 'close-circle-outline' },
+  Pendente:     { bg: '#FEF9C3', texto: 'Pendente',    cor: '#92400E', icone: 'time-outline' },
+  'Em Análise': { bg: '#DBEAFE', texto: 'Em Análise',  cor: '#1E40AF', icone: 'search-outline' },
 };
 
 export default function RelatorioScreen() {
   const navigation = useNavigation<any>();
   const [abaAtiva, setAbaAtiva] = useState('Todas');
+  const [atividadeSelecionada, setAtividadeSelecionada] = useState<Atividade | null>(null);
+  const [modalVisivel, setModalVisivel] = useState(false);
 
   const totalHoras = atividades.filter(a => a.status === 'Aprovado').reduce((acc, a) => acc + parseInt(a.horas), 0);
   const aprovadas = atividades.filter(a => a.status === 'Aprovado').length;
   const pendentes = atividades.filter(a => a.status === 'Pendente' || a.status === 'Em Análise').length;
   const filtradas = abaAtiva === 'Todas' ? atividades : atividades.filter(a => a.status === abaAtiva);
+
+  function abrirDetalhes(item: Atividade) {
+    setAtividadeSelecionada(item);
+    setModalVisivel(true);
+  }
+
+  function fecharModal() {
+    setModalVisivel(false);
+    setAtividadeSelecionada(null);
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -91,7 +151,12 @@ export default function RelatorioScreen() {
           {filtradas.map((item, index) => {
             const cfg = statusConfig[item.status];
             return (
-              <View key={index} style={styles.cardAtividade}>
+              <TouchableOpacity
+                key={index}
+                style={styles.cardAtividade}
+                activeOpacity={0.75}
+                onPress={() => abrirDetalhes(item)}
+              >
                 <View style={styles.atividadeLinha}>
                   <View style={styles.atividadeIcone}>
                     <Ionicons name="document-text-outline" size={18} color="#1E3A8A" />
@@ -114,7 +179,7 @@ export default function RelatorioScreen() {
                     <Text style={styles.atividadeCategoriaTag}>{item.categoria}</Text>
                   </View>
                 </View>
-              </View>
+              </TouchableOpacity>
             );
           })}
           <View style={{ height: 20 }} />
@@ -122,6 +187,93 @@ export default function RelatorioScreen() {
 
         <Footer />
       </View>
+
+      {/* ── Modal de Detalhes ── */}
+      <Modal
+        visible={modalVisivel}
+        animationType="slide"
+        transparent
+        onRequestClose={fecharModal}
+      >
+        <Pressable style={styles.modalOverlay} onPress={fecharModal}>
+          <Pressable style={styles.modalContainer} onPress={() => {}}>
+            {atividadeSelecionada && (() => {
+              const cfg = statusConfig[atividadeSelecionada.status];
+              return (
+                <>
+                  {/* Topo do modal */}
+                  <View style={styles.modalHandle} />
+
+                  <View style={styles.modalHeader}>
+                    <View style={styles.modalIcone}>
+                      <Ionicons name="document-text-outline" size={24} color="#1E3A8A" />
+                    </View>
+                    <TouchableOpacity onPress={fecharModal} style={styles.modalFechar}>
+                      <Ionicons name="close" size={22} color="#6B7280" />
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Título e status */}
+                  <Text style={styles.modalTitulo}>{atividadeSelecionada.titulo}</Text>
+                  <View style={[styles.badgeModal, { backgroundColor: cfg.bg }]}>
+                    <Ionicons name={cfg.icone as any} size={13} color={cfg.cor} style={{ marginRight: 4 }} />
+                    <Text style={[styles.badgeModalTexto, { color: cfg.cor }]}>{cfg.texto}</Text>
+                  </View>
+
+                  {/* Linha divisória */}
+                  <View style={styles.divisor} />
+
+                  {/* Informações */}
+                  <View style={styles.infoGrid}>
+                    <View style={styles.infoItem}>
+                      <Text style={styles.infoLabel}>Código</Text>
+                      <Text style={styles.infoValor}>{atividadeSelecionada.id}</Text>
+                    </View>
+                    <View style={styles.infoItem}>
+                      <Text style={styles.infoLabel}>Data</Text>
+                      <Text style={styles.infoValor}>{atividadeSelecionada.data}</Text>
+                    </View>
+                    <View style={styles.infoItem}>
+                      <Text style={styles.infoLabel}>Categoria</Text>
+                      <Text style={styles.infoValor}>{atividadeSelecionada.categoria}</Text>
+                    </View>
+                    <View style={styles.infoItem}>
+                      <Text style={styles.infoLabel}>Horas</Text>
+                      <Text style={styles.infoValor}>{atividadeSelecionada.horas}</Text>
+                    </View>
+                  </View>
+
+                  {atividadeSelecionada.responsavel && (
+                    <View style={styles.infoBloco}>
+                      <Text style={styles.infoLabel}>Responsável</Text>
+                      <Text style={styles.infoValor}>{atividadeSelecionada.responsavel}</Text>
+                    </View>
+                  )}
+
+                  {atividadeSelecionada.descricao && (
+                    <View style={styles.infoBloco}>
+                      <Text style={styles.infoLabel}>Descrição</Text>
+                      <Text style={styles.infoDescricao}>{atividadeSelecionada.descricao}</Text>
+                    </View>
+                  )}
+
+                  {atividadeSelecionada.motivoRecusa && (
+                    <View style={styles.motivoModalContainer}>
+                      <Ionicons name="alert-circle-outline" size={16} color="#991B1B" style={{ marginRight: 6 }} />
+                      <Text style={styles.motivoModalTexto}>Motivo da recusa: {atividadeSelecionada.motivoRecusa}</Text>
+                    </View>
+                  )}
+
+                  {/* Botão fechar */}
+                  <TouchableOpacity style={styles.btnFechar} onPress={fecharModal}>
+                    <Text style={styles.btnFecharTexto}>Fechar</Text>
+                  </TouchableOpacity>
+                </>
+              );
+            })()}
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -172,4 +324,63 @@ const styles = StyleSheet.create({
   atividadeData: { fontSize: 11, color: '#9CA3AF', marginBottom: 4 },
   atividadeHoras: { fontSize: 14, fontWeight: '700', color: '#111827', marginBottom: 4 },
   atividadeCategoriaTag: { fontSize: 11, color: '#3B82F6', fontWeight: '500' },
+
+  /* ── Modal ── */
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
+  },
+  modalContainer: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    padding: 24,
+    paddingBottom: 36,
+  },
+  modalHandle: {
+    width: 40, height: 4, backgroundColor: '#E5E7EB',
+    borderRadius: 2, alignSelf: 'center', marginBottom: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  modalIcone: {
+    backgroundColor: '#EFF6FF', width: 48, height: 48,
+    borderRadius: 14, justifyContent: 'center', alignItems: 'center',
+  },
+  modalFechar: {
+    backgroundColor: '#F3F4F6', width: 36, height: 36,
+    borderRadius: 18, justifyContent: 'center', alignItems: 'center',
+  },
+  modalTitulo: {
+    fontSize: 20, fontWeight: 'bold', color: '#111827', marginBottom: 10,
+  },
+  badgeModal: {
+    flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start',
+    borderRadius: 12, paddingHorizontal: 12, paddingVertical: 5, marginBottom: 16,
+  },
+  badgeModalTexto: { fontSize: 13, fontWeight: '700' },
+  divisor: { height: 1, backgroundColor: '#F3F4F6', marginBottom: 16 },
+  infoGrid: {
+    flexDirection: 'row', flexWrap: 'wrap', gap: 14, marginBottom: 16,
+  },
+  infoItem: { width: '45%' },
+  infoBloco: { marginBottom: 14 },
+  infoLabel: { fontSize: 11, color: '#9CA3AF', fontWeight: '600', textTransform: 'uppercase', marginBottom: 3 },
+  infoValor: { fontSize: 14, fontWeight: '600', color: '#111827' },
+  infoDescricao: { fontSize: 14, color: '#374151', lineHeight: 20 },
+  motivoModalContainer: {
+    flexDirection: 'row', alignItems: 'flex-start',
+    backgroundColor: '#FEE2E2', borderRadius: 10, padding: 12, marginBottom: 20,
+  },
+  motivoModalTexto: { fontSize: 13, color: '#991B1B', flex: 1, lineHeight: 18 },
+  btnFechar: {
+    backgroundColor: '#1E3A8A', borderRadius: 14,
+    paddingVertical: 14, alignItems: 'center', marginTop: 8,
+  },
+  btnFecharTexto: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
 });

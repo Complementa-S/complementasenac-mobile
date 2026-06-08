@@ -16,7 +16,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <NavigationContainer>
-        <Stack.Navigator initialRouteName="Upload">
+        <Stack.Navigator initialRouteName="Login">
           <Stack.Screen name="Login"             component={Login}          options={{ headerShown: false }} />
           <Stack.Screen name="Dashboard"         component={Dashboard}      options={{ headerShown: false }} />
           <Stack.Screen name="CargaComplementar" component={CargaComplementar} options={{ headerShown: false }} />
