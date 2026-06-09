@@ -1,93 +1,74 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Alert, ActivityIndicator, TextInput, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-
-// Instale: npm install react-native-safe-area-context
 import { SafeAreaView } from 'react-native-safe-area-context';
-
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as DocumentPicker from 'expo-document-picker';
-import Footer from '../components/Footer';
 
-// Importa a função que o seu colega criou
-import { createSubmission, loginWithFirebase } from '../services/firebaseRepository';
+import Footer from '../components/Footer';
+import { createSubmission } from '../services/firebaseRepository';
+import { useAuth } from '../contexts/AuthContext'; // 👈 usa o usuário já logado
 
 export default function UploadScreen() {
-  // Estados para os dados do formulário que o banco exige
+  const { user } = useAuth(); // 👈 pega o usuário logado
+  const navigation = useNavigation<NativeStackNavigationProp<any>>();
+
   const [titulo, setTitulo] = useState<string>('');
   const [categoria, setCategoria] = useState<string>('');
   const [horas, setHoras] = useState<string>('');
-
-  // Estados para o arquivo
   const [fileName, setFileName] = useState<string | null>(null);
   const [fileUri, setFileUri] = useState<string | null>(null);
   const [fileMimeType, setFileMimeType] = useState<string | undefined>(undefined);
-  
   const [isUploading, setIsUploading] = useState<boolean>(false);
 
   const handlePickFile = async (): Promise<void> => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: ['application/pdf', 'image/png'], 
+        type: ['application/pdf', 'image/png'],
         copyToCacheDirectory: true,
       });
-
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const file = result.assets[0];
         setFileName(file.name);
         setFileUri(file.uri);
-        setFileMimeType(file.mimeType); // Salva o tipo (ex: 'application/pdf')
+        setFileMimeType(file.mimeType);
       }
     } catch (error) {
       Alert.alert("Erro", "Ocorreu um problema ao tentar abrir o arquivo.");
     }
   };
 
-
-
-
-
-//////////////////////////////////////////////////////////////////////////////////////////////////
-
   const handleSubmit = async (): Promise<void> => {
-    // Validação de todos os campos que o backend exige
     if (!titulo || !categoria || !horas || !fileUri) {
       Alert.alert("Atenção", "Por favor, preencha todos os campos e selecione um arquivo.");
       return;
     }
 
+    // 👇 Se não há usuário logado, bloqueia
+    if (!user) {
+      Alert.alert("Erro", "Você precisa estar logado para enviar uma atividade.");
+      navigation.navigate('Login');
+      return;
+    }
+
     try {
-        setIsUploading(true);
+      setIsUploading(true);
 
-      // 1. FAÇA O LOGIN REAL AQUI (Substitua por um e-mail e senha válidos do seu Firebase)
-      // Isso vai no Firebase, autentica, e devolve o AppUser com o token real.
-      const usuarioLogado = await loginWithFirebase('musafa020010@c.senac.br', '12345678');
-
-      // 2. AGORA SIM, CHAMA O UPLOAD COM O USUÁRIO REAL
-      const respostaDoServidor = await createSubmission(usuarioLogado, {
-        titulo: titulo,
-        categoria: categoria,
-        horas: Number(horas), 
+      // 👇 Usa o usuário logado, sem login hardcoded
+      const resposta = await createSubmission(user, {
+        titulo,
+        categoria,
+        horas: Number(horas),
         file: {
-          uri: fileUri,
-          name: fileName!,
+        uri: fileUri,
+        name: fileName!,
           mimeType: fileMimeType,
-        }
+        },
       });
 
-      // 2. Agora sim você pode usar a variável sem tomar erro!
-      console.log("O servidor salvou com sucesso! Dados:", respostaDoServidor);
-    //   setIsUploading(true);
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////
-    
-
-      // Pede para o alerta mostrar a URL que o servidor gerou
-      Alert.alert(
-        "Sucesso!", 
-        `Atividade salva!\nLink gerado: ${respostaDoServidor.urlCertificado || 'NENHUM LINK RETORNADO'}`
-      );
-      // Alert.alert("Sucesso!", "A atividade foi enviada e salva no banco de dados.");
-      
-      // Limpa a tela após o sucesso
+  Alert.alert("Sucesso!", "Atividade enviada com sucesso!", [
+  { text: "Ver relatório", onPress: () => navigation.navigate('Relatorio') }
+    ]);
       setTitulo('');
       setCategoria('');
       setHoras('');
@@ -103,19 +84,20 @@ export default function UploadScreen() {
   };
 
   return (
-
     <SafeAreaView style={styles.container}>
-
-      {/* Usamos KeyboardAvoidingView e ScrollView porque agora temos campos de digitar */}
-      <KeyboardAvoidingView 
-        style={{ flex: 1 }} 
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView contentContainerStyle={styles.content}>
+
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+            <Text style={styles.backButtonText}>← Voltar</Text>
+          </TouchableOpacity>
+
           <Text style={styles.title}>Nova Atividade</Text>
           <Text style={styles.subtitle}>Preencha os dados e anexe o comprovante.</Text>
 
-          {/* Novos Campos de Texto */}
           <TextInput
             style={styles.input}
             placeholder="Título da Atividade"
@@ -130,42 +112,40 @@ export default function UploadScreen() {
           />
           <TextInput
             style={styles.input}
-            placeholder="Carga Horária (Apenas números)"
+            placeholder="Carga Horária (apenas números)"
             keyboardType="numeric"
             value={horas}
             onChangeText={setHoras}
           />
 
           <View style={styles.fileBox}>
-            {fileName ? (
-              <Text style={styles.fileName}>{fileName}</Text>
-            ) : (
-              <Text style={styles.placeholderText}>Nenhum arquivo selecionado</Text>
-            )}
+            {fileName
+              ? <Text style={styles.fileName}>{fileName}</Text>
+              : <Text style={styles.placeholderText}>Nenhum arquivo selecionado</Text>
+            }
           </View>
 
-          <TouchableOpacity 
-            style={styles.pickButton} 
+          <TouchableOpacity
+            style={styles.pickButton}
             onPress={handlePickFile}
             disabled={isUploading}
           >
             <Text style={styles.pickButtonText}>Escolher Arquivo</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={[styles.submitButton, (!fileUri || isUploading) && styles.submitButtonDisabled]} 
+          <TouchableOpacity
+            style={[styles.submitButton, (!fileUri || isUploading) && styles.submitButtonDisabled]}
             onPress={handleSubmit}
-            disabled={!fileUri || isUploading} 
+            disabled={!fileUri || isUploading}
           >
-            {isUploading ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Text style={styles.submitButtonText}>Enviar Atividade</Text>
-            )}
+            {isUploading
+              ? <ActivityIndicator color="#FFFFFF" />
+              : <Text style={styles.submitButtonText}>Enviar Atividade</Text>
+            }
           </TouchableOpacity>
+
         </ScrollView>
       </KeyboardAvoidingView>
-
       <Footer />
     </SafeAreaView>
   );
@@ -174,6 +154,15 @@ export default function UploadScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F7F9FC' },
   content: { padding: 24, justifyContent: 'center' },
+  backButton: {
+    alignSelf: 'flex-start',
+    marginBottom: 16,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: '#EDF2F7',
+  },
+  backButtonText: { fontSize: 15, color: '#2B6CB0', fontWeight: '600' },
   title: { fontSize: 24, fontWeight: 'bold', color: '#2D3748', marginBottom: 8, textAlign: 'center' },
   subtitle: { fontSize: 16, color: '#718096', textAlign: 'center', marginBottom: 24 },
   input: {
@@ -196,181 +185,3 @@ const styles = StyleSheet.create({
   submitButtonDisabled: { backgroundColor: '#A0AEC0' },
   submitButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// import React, { useState } from 'react';
-// import { StyleSheet, Text, View, TouchableOpacity, Alert } from 'react-native';
-// // Importação da biblioteca que acabamos de instalar
-// import * as DocumentPicker from 'expo-document-picker';
-
-// /* Import do "Cabeçario" de navegação */
-// import Footer from '../components/Footer';
-
-// export default function UploadScreen() {
-//   // Estados para guardar o nome e o caminho do arquivo selecionado
-//   const [fileName, setFileName] = useState<string | null>(null);
-//   const [fileUri, setFileUri] = useState<string | null>(null);
-
-//   // Função para abrir o gerenciador de arquivos
-//   const handlePickFile = async (): Promise<void> => {
-//     try {
-//       const result = await DocumentPicker.getDocumentAsync({
-//         // Tipos MIME permitidos (PDF e PNG)
-//         type: ['application/pdf', 'image/png'], 
-//         copyToCacheDirectory: true,
-//       });
-
-//       // Se o usuário não cancelou e selecionou um arquivo
-//       if (!result.canceled && result.assets && result.assets.length > 0) {
-//         const file = result.assets[0];
-//         setFileName(file.name);
-//         setFileUri(file.uri); // O URI é o que você vai usar para enviar para o backend depois
-//       }
-//     } catch (error) {
-//       Alert.alert("Erro", "Ocorreu um problema ao tentar abrir o arquivo.");
-//     }
-//   };
-
-//   // Função para simular o envio do arquivo
-//   const handleSubmit = (): void => {
-//     if (!fileUri) {
-//       Alert.alert("Atenção", "Por favor, selecione um arquivo antes de enviar.");
-//       return;
-//     }
-
-//     // Aqui entraria o código para enviar o arquivo via API (FormData)
-//     Alert.alert("Enviando...", `O arquivo "${fileName}" seria enviado agora.`);
-//   };
-
-//   return (
-//     <View style={styles.container}>
-//       <Text style={styles.title}>Envio de Atividade</Text>
-//       <Text style={styles.subtitle}>
-//         Selecione um arquivo PDF ou uma imagem PNG para continuar.
-//       </Text>
-
-//       {/* Caixa de exibição do arquivo selecionado */}
-//       <View style={styles.fileBox}>
-//         {fileName ? (
-//           <Text style={styles.fileName}>{fileName}</Text>
-//         ) : (
-//           <Text style={styles.placeholderText}>Nenhum arquivo selecionado</Text>
-//         )}
-//       </View>
-
-//       <TouchableOpacity 
-//         style={styles.pickButton} 
-//         onPress={handlePickFile}
-//       >
-//         <Text style={styles.pickButtonText}>Escolher Arquivo</Text>
-//       </TouchableOpacity>
-
-//       <TouchableOpacity 
-//         style={[styles.submitButton, !fileUri && styles.submitButtonDisabled]} 
-//         onPress={handleSubmit}
-//         disabled={!fileUri} // Desabilita o botão se não houver arquivo
-//       >
-//         <Text style={styles.submitButtonText}>Enviar Arquivo</Text>
-//       </TouchableOpacity>
-
-//     <View style={styles.restoDaTela}>
-//     </View>
-
-//       <Footer />
-
-//     </View>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     backgroundColor: '#F7F9FC',
-//     padding: 24,
-//     justifyContent: 'center',
-//   },
-//   title: {
-//     fontSize: 24,
-//     fontWeight: 'bold',
-//     color: '#2D3748',
-//     marginBottom: 8,
-//     textAlign: 'center',
-//   },
-//   subtitle: {
-//     fontSize: 16,
-//     color: '#718096',
-//     textAlign: 'center',
-//     marginBottom: 32,
-//   },
-//   fileBox: {
-//     backgroundColor: '#EDF2F7',
-//     borderWidth: 1,
-//     borderColor: '#CBD5E0',
-//     borderStyle: 'dashed',
-//     borderRadius: 8,
-//     padding: 24,
-//     alignItems: 'center',
-//     marginBottom: 24,
-//   },
-//   fileName: {
-//     fontSize: 16,
-//     color: '#2B6CB0',
-//     fontWeight: '600',
-//     textAlign: 'center',
-//   },
-//   placeholderText: {
-//     fontSize: 16,
-//     color: '#A0AEC0',
-//   },
-//   pickButton: {
-//     backgroundColor: '#FFFFFF',
-//     borderWidth: 1,
-//     borderColor: '#2B6CB0',
-//     paddingVertical: 14,
-//     borderRadius: 8,
-//     alignItems: 'center',
-//     marginBottom: 16,
-//   },
-//   pickButtonText: {
-//     color: '#2B6CB0',
-//     fontSize: 16,
-//     fontWeight: 'bold',
-//   },
-//   submitButton: {
-//     backgroundColor: '#2B6CB0',
-//     paddingVertical: 14,
-//     borderRadius: 8,
-//     alignItems: 'center',
-//   },
-//   submitButtonDisabled: {
-//     backgroundColor: '#A0AEC0',
-//   },
-//   submitButtonText: {
-//     color: '#FFFFFF',
-//     fontSize: 16,
-//     fontWeight: 'bold',
-//   },
-
-//   /////// obs: resto de tela /////////
-//     restoDaTela: {
-//     flex: 0,
-//     padding: 8,
-//   }
-// });
