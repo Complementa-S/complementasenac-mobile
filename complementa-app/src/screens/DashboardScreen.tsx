@@ -5,6 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation} from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Footer from '../components/Footer';
+import { useAuth } from '../contexts/AuthContext';
+import { logoutFirebase } from '../services/firebaseRepository';
 
 export default function DashboardScreen() {
   const aluno = {
@@ -12,7 +14,7 @@ export default function DashboardScreen() {
     curso: 'Análise e Desenvolvimento de Sistemas',
     matricula: '0020010',
   };
-
+  
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
 
   const horasConcluidas = 100;
@@ -27,7 +29,16 @@ export default function DashboardScreen() {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
+
   });
+  const { setUser } = useAuth();
+  const handleLogout = async () => {
+  await logoutFirebase();
+  setUser(null);
+  navigation.replace('Login');
+};
+
+
   const dataFormatada = hoje.charAt(0).toUpperCase() + hoje.slice(1);
 
   return (
@@ -37,13 +48,18 @@ export default function DashboardScreen() {
       <View style={styles.container}>
         {/* ── Header Azul ── */}
         <View style={styles.headerAzul}>
-          <View style={styles.linhaSuperior}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.saudacao}>Olá, {aluno.nome.split(' ')[0]} 👋</Text>
-              <Text style={styles.data}>{dataFormatada}</Text>
-            </View>
-            <Ionicons name="notifications-outline" size={26} color="#FFFFFF" />
-          </View>
+         <View style={styles.linhaSuperior}>
+  <View style={{ flex: 1 }}>
+    <Text style={styles.saudacao}>Olá, {aluno.nome.split(' ')[0]} 👋</Text>
+    <Text style={styles.data}>{dataFormatada}</Text>
+  </View>
+  <View style={{ flexDirection: 'row', gap: 16 }}>
+    <Ionicons name="notifications-outline" size={26} color="#FFFFFF" />
+    <TouchableOpacity onPress={handleLogout}>  {/* 👈 aqui */}
+      <Ionicons name="log-out-outline" size={26} color="#FFFFFF" />
+    </TouchableOpacity>
+  </View>
+</View>
 
           {/* Detalhes do aluno */}
           <View style={styles.detalhesAluno}>
@@ -62,6 +78,9 @@ export default function DashboardScreen() {
                 <Text style={styles.badgeTexto}>{status}</Text>
               </View>
             </View>
+            <TouchableOpacity onPress={handleLogout}>
+               <Ionicons name="log-out-outline" size={26} color="#FFFFFF" />
+              </TouchableOpacity>
 
             <View style={styles.horasRow}>
               <Text style={styles.horasNumero}>{horasConcluidas}</Text>
