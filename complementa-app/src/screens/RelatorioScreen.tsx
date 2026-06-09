@@ -14,7 +14,7 @@ type Atividade = {
   categoria: string;
   data: string;
   horas: string;
-  status: 'Aprovado' | 'Indeferida' | 'Pendente' | 'Em Análise';
+  status: 'Aprovado' | 'Indeferida' | 'Pendente';
   motivoRecusa?: string;
   descricao?: string;
   responsavel?: string;
@@ -74,13 +74,12 @@ const atividades: Atividade[] = [
   },
 ];
 
-const abas = ['Todas', 'Aprovado', 'Indeferida', 'Pendente', 'Em Análise'];
+const abas = ['Todas', 'Aprovado', 'Indeferida', 'Pendente'];
 
 const statusConfig: Record<string, { bg: string; texto: string; cor: string; icone: string }> = {
   Aprovado:     { bg: '#D1FAE5', texto: 'Aprovado',    cor: '#065F46', icone: 'checkmark-circle-outline' },
   Indeferida:   { bg: '#FEE2E2', texto: 'Indeferida',  cor: '#991B1B', icone: 'close-circle-outline' },
   Pendente:     { bg: '#FEF9C3', texto: 'Pendente',    cor: '#92400E', icone: 'time-outline' },
-  'Em Análise': { bg: '#DBEAFE', texto: 'Em Análise',  cor: '#1E40AF', icone: 'search-outline' },
 };
 
 export default function RelatorioScreen() {
@@ -91,7 +90,7 @@ export default function RelatorioScreen() {
 
   const totalHoras = atividades.filter(a => a.status === 'Aprovado').reduce((acc, a) => acc + parseInt(a.horas), 0);
   const aprovadas = atividades.filter(a => a.status === 'Aprovado').length;
-  const pendentes = atividades.filter(a => a.status === 'Pendente' || a.status === 'Em Análise').length;
+  const pendentes = atividades.filter(a => a.status === 'Pendente' ).length;
   const filtradas = abaAtiva === 'Todas' ? atividades : atividades.filter(a => a.status === abaAtiva);
 
   function abrirDetalhes(item: Atividade) {
@@ -188,8 +187,7 @@ export default function RelatorioScreen() {
         <Footer />
       </View>
 
-      {/* ── Modal de Detalhes ── */}
-      <Modal
+Z       <Modal
         visible={modalVisivel}
         animationType="slide"
         transparent
