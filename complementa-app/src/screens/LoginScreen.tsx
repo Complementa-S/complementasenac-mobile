@@ -1,3 +1,6 @@
+import { loginWithFirebase } from '../services/firebaseRepository';
+import { useAuth } from '../contexts/AuthContext';
+import { ActivityIndicator } from 'react-native';
 import React, { useState } from 'react';
 import { 
   StyleSheet, 
@@ -13,7 +16,8 @@ import {
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
-  
+  const { setUser } = useAuth();
+  const [loading, setLoading] = useState(false);
   // 1. NOVO: Estado para guardar o texto de erro do e-mail
   const [emailErro, setEmailErro] = useState<string>('');
 
@@ -33,26 +37,28 @@ export default function LoginScreen({ navigation }: any) {
     }
   };
 
-  const handleLogin = (): void => {
-    // Validação de campos vazios
-    if (!email || !password) {
-      Alert.alert("Atenção", "Por favor, preencha e-mail e senha.");
-      return;
-    }
+  const handleLogin = async (): Promise<void> => {
+  if (!email || !password) {
+    Alert.alert("Atenção", "Por favor, preencha e-mail e senha.");
+    return;
+  }
+  if (!regexEmail.test(email)) {
+    Alert.alert("Atenção", "O formato do e-mail está incorreto.");
+    return;
+  }
 
-    // 4. NOVO: Trava de segurança. Se o e-mail não passar no teste do Regex, o login é bloqueado
-    if (!regexEmail.test(email)) {
-      Alert.alert("Atenção", "O formato do e-mail está incorreto.");
-      return;
-    }
+  try {
+    setLoading(true);
+    const user = await loginWithFirebase(email, password);
+    setUser(user);
+    navigation.navigate('Dashboard');
+  } catch (error: any) {
+    Alert.alert("Erro no login", "E-mail ou senha incorretos.");
+  } finally {
+    setLoading(false);
+  }
 
-    // Aqui entraria a requisição HTTP para o seu backend (ex: API em Spring Boot)
-    // Alert.alert("Login Solicitado", `Autenticando o usuário: ${email}`);
-
-    // Navega para a tela que chamamos de "Home" lá no App.tsx
-    navigation.navigate('Dashboard'); 
   };
-
   return (
     <KeyboardAvoidingView 
       style={styles.container}
@@ -92,10 +98,14 @@ export default function LoginScreen({ navigation }: any) {
 
         <TouchableOpacity 
           style={styles.button} 
-          onPress={handleLogin}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.buttonText}>Entrar</Text>
+             onPress={handleLogin}
+                activeOpacity={0.8}
+                   disabled={loading}
+                                      >
+         {loading 
+        ? <ActivityIndicator color="#FFFFFF" /> 
+        : <Text style={styles.buttonText}>Entrar</Text>
+       }
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.forgotPassword}>
