@@ -73,7 +73,7 @@ export default function CargaComplementarScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#1E3A8A" />
+        <StatusBar barStyle="light-content" backgroundColor="#004C94" />
 
         {/* HEADER */}
         <View style={styles.headerAzul}>
@@ -88,7 +88,7 @@ export default function CargaComplementarScreen() {
 
         {carregando ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#1E3A8A" />
+            <ActivityIndicator size="large" color="#004C94" />
             <Text style={styles.loadingTexto}>Carregando dados...</Text>
           </View>
         ) : (
@@ -205,7 +205,7 @@ export default function CargaComplementarScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F3F4F6' },
   headerAzul: {
-    backgroundColor: '#1E3A8A', paddingTop: 60, paddingHorizontal: 24, paddingBottom: 24,
+    backgroundColor: '#004C94', paddingTop: 60, paddingHorizontal: 24, paddingBottom: 24,
     borderBottomLeftRadius: 30, borderBottomRightRadius: 30,
   },
   linhaSuperior: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
@@ -220,12 +220,12 @@ const styles = StyleSheet.create({
   cardStatusTopo: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   cardStatusTitulo: { fontSize: 14, color: '#6B7280' },
   badgeProgresso: { backgroundColor: '#EFF6FF', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 4 },
-  badgeProgressoTexto: { fontSize: 12, color: '#1E3A8A', fontWeight: '600' },
+  badgeProgressoTexto: { fontSize: 12, color: '#004C94', fontWeight: '600' },
   horasTexto: { marginBottom: 14 },
   horasNumero: { fontSize: 36, fontWeight: 'bold', color: '#111827' },
   horasTotal: { fontSize: 18, color: '#6B7280' },
   barraFundo: { height: 8, backgroundColor: '#E5E7EB', borderRadius: 4, marginBottom: 12 },
-  barraPreenchida: { height: 8, backgroundColor: '#1E3A8A', borderRadius: 4 },
+  barraPreenchida: { height: 8, backgroundColor: '#004C94', borderRadius: 4 },
   cardStatusRodape: { flexDirection: 'row', justifyContent: 'space-between' },
   percentualTexto: { fontSize: 13, color: '#6B7280' },
   atividadesTexto: { fontSize: 13, color: '#6B7280' },
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
   vazioContainer: { alignItems: 'center', paddingVertical: 40, gap: 12 },
   vazioTexto: { fontSize: 15, color: '#9CA3AF' },
   botaoSubmissao: {
-    backgroundColor: '#1E3A8A', borderRadius: 14, paddingVertical: 16,
+    backgroundColor: '#004C94', borderRadius: 14, paddingVertical: 16,
     flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: 8,
   },
   botaoSubmissaoTexto: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },

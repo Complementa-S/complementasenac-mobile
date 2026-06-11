@@ -1,5 +1,7 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+// @ts-ignore
+import { initializeAuth, getReactNativePersistence, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
@@ -19,8 +21,22 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-export const auth = getAuth(app);
+export const auth = initializeAuth(app, {
+  persistence: getReactNativePersistence(AsyncStorage)
+});
+
 export const db = getFirestore(app);
 export const storage = getStorage(app);
-export default app;
 
+// Função para logar com e-mail e senha já existentes
+export const loginComEmail = async (email: string, senha: string) => {
+  const userCredential = await signInWithEmailAndPassword(auth, email, senha);
+  return userCredential.user;
+};
+
+// Função para fazer logout completo
+export const deslogarUsuario = async () => {
+  await signOut(auth);
+};
+
+export default app;

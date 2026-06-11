@@ -1,4 +1,4 @@
-import { loginWithFirebase } from '../services/firebaseRepository';
+import { signIn } from '../controllers/authController'; // Agora importa do Controller
 import { useAuth } from '../contexts/AuthContext';
 import { ActivityIndicator } from 'react-native';
 import React, { useState } from 'react';
@@ -13,7 +13,9 @@ import {
   Alert 
 } from 'react-native';
 
-export default function LoginScreen({ navigation }: any) {
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+export default function LoginScreen() {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const { setUser } = useAuth();
@@ -38,81 +40,112 @@ export default function LoginScreen({ navigation }: any) {
   };
 
   const handleLogin = async (): Promise<void> => {
-  if (!email || !password) {
-    Alert.alert("Atenção", "Por favor, preencha e-mail e senha.");
-    return;
-  }
-  if (!regexEmail.test(email)) {
-    Alert.alert("Atenção", "O formato do e-mail está incorreto.");
-    return;
-  }
+    if (!email || !password) {
+      Alert.alert("Atenção", "Por favor, preencha e-mail e senha.");
+      return;
+    }
+    if (!regexEmail.test(email)) {
+      Alert.alert("Atenção", "O formato do e-mail está incorreto.");
+      return;
+    }
 
-  try {
-    setLoading(true);
-    const user = await loginWithFirebase(email, password);
-    setUser(user);
-    navigation.navigate('Dashboard');
-  } catch (error: any) {
-    Alert.alert("Erro no login", "E-mail ou senha incorretos.");
-  } finally {
-    setLoading(false);
-  }
-
+    try {
+      setLoading(true);
+      
+      // 1. Passa pelo controlador, que valida e busca no Firebase + seu Backend
+      const user = await signIn(email, password);
+      
+      // 2. Salva o usuário no estado global. 
+      // Isso fará o App.tsx desmontar a tela de Login e montar o Dashboard sozinho!
+      setUser(user);
+      
+    } catch (error: any) {
+      // Captura mensagens amigáveis lançadas pelo backend ou pelo Firebase
+      Alert.alert("Erro no login", error.message || "E-mail ou senha incorretos.");
+    } finally {
+      setLoading(false);
+    }
   };
+  
+  // const handleLogin = async (): Promise<void> => {
+  // if (!email || !password) {
+  //   Alert.alert("Atenção", "Por favor, preencha e-mail e senha.");
+  //   return;
+  // }
+  // if (!regexEmail.test(email)) {
+  //   Alert.alert("Atenção", "O formato do e-mail está incorreto.");
+  //   return;
+  // }
+
+  // try {
+  //   setLoading(true);
+  //   const user = await loginWithFirebase(email, password);
+  //   setUser(user);
+  //   navigation.navigate('Dashboard');
+  // } catch (error: any) {
+  //   Alert.alert("Erro no login", "E-mail ou senha incorretos.");
+  // } finally {
+  //   setLoading(false);
+  // }
+  // };
+
+
   return (
-    <KeyboardAvoidingView 
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <View style={styles.formContainer}>
-        <Text style={styles.title}>Bem-vindo ao Complementa+</Text>
-        <Text style={styles.subtitle}>Faça login na sua conta para continuar</Text>
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView 
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <View style={styles.formContainer}>
+          <Text style={styles.title}>Bem-vindo ao Complementa+</Text>
+          <Text style={styles.subtitle}>Faça login na sua conta para continuar</Text>
 
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>E-mail</Text>
-          <TextInput
-            // Se houver erro, a borda do input fica vermelha
-            style={[styles.input, emailErro ? styles.inputErro : null]} 
-            placeholder="exemplo@email.com"
-            placeholderTextColor="#A0AEC0"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            value={email}
-            onChangeText={handleEmailChange} // Chamando a nossa nova função aqui
-          />
-          {/* 5. NOVO: Mostra a mensagem de erro na tela se a variável não estiver vazia */}
-          {emailErro ? <Text style={styles.textoErro}>{emailErro}</Text> : null}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>E-mail</Text>
+            <TextInput
+              // Se houver erro, a borda do input fica vermelha
+              style={[styles.input, emailErro ? styles.inputErro : null]} 
+              placeholder="exemplo@email.com"
+              placeholderTextColor="#A0AEC0"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={email}
+              onChangeText={handleEmailChange} // Chamando a nossa nova função aqui
+            />
+            {/* 5. NOVO: Mostra a mensagem de erro na tela se a variável não estiver vazia */}
+            {emailErro ? <Text style={styles.textoErro}>{emailErro}</Text> : null}
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Senha</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Digite sua senha"
+              placeholderTextColor="#A0AEC0"
+              secureTextEntry={true} 
+              value={password}
+              onChangeText={setPassword}
+            />
+          </View>
+
+          <TouchableOpacity 
+            style={styles.button} 
+              onPress={handleLogin}
+                  activeOpacity={0.8}
+                    disabled={loading}
+                                        >
+          {loading 
+          ? <ActivityIndicator color="#FFFFFF" /> 
+          : <Text style={styles.buttonText}>Entrar</Text>
+        }
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.forgotPassword}>
+            <Text style={styles.forgotPasswordText}>Esqueceu a senha?</Text>
+          </TouchableOpacity>
         </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Senha</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Digite sua senha"
-            placeholderTextColor="#A0AEC0"
-            secureTextEntry={true} 
-            value={password}
-            onChangeText={setPassword}
-          />
-        </View>
-
-        <TouchableOpacity 
-          style={styles.button} 
-             onPress={handleLogin}
-                activeOpacity={0.8}
-                   disabled={loading}
-                                      >
-         {loading 
-        ? <ActivityIndicator color="#FFFFFF" /> 
-        : <Text style={styles.buttonText}>Entrar</Text>
-       }
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.forgotPassword}>
-          <Text style={styles.forgotPasswordText}>Esqueceu a senha?</Text>
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
