@@ -4,11 +4,20 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation} from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import Footer from '../components/Footer';
+
 import { useAuth } from '../contexts/AuthContext';
 import { logoutFirebase } from '../services/firebaseRepository';
 
+//  Components
+import Header from '../components/Header';
+import Footer from '../components/Footer';
+
+
 export default function DashboardScreen() {
+
+  const {user} = useAuth();
+  if (!user) return null;
+
   const aluno = {
     nome: 'Abraão Musafa',
     curso: 'Análise e Desenvolvimento de Sistemas',
@@ -24,13 +33,7 @@ export default function DashboardScreen() {
   const atividadesAprovadas = 5;
   const status = 'Em progresso';
 
-  const hoje = new Date().toLocaleDateString('pt-BR', {
-    weekday: 'long',
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-
-  });
+  
   const { setUser } = useAuth();
   const handleLogout = async () => {
   await logoutFirebase();
@@ -38,34 +41,13 @@ export default function DashboardScreen() {
   navigation.replace('Login');
 };
 
-
-  const dataFormatada = hoje.charAt(0).toUpperCase() + hoje.slice(1);
-
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1E3A8A" />
 
       <View style={styles.container}>
         {/* ── Header Azul ── */}
         <View style={styles.headerAzul}>
-         <View style={styles.linhaSuperior}>
-  <View style={{ flex: 1 }}>
-    <Text style={styles.saudacao}>Olá, {aluno.nome.split(' ')[0]} 👋</Text>
-    <Text style={styles.data}>{dataFormatada}</Text>
-  </View>
-  <View style={{ flexDirection: 'row', gap: 16 }}>
-    <Ionicons name="notifications-outline" size={26} color="#FFFFFF" />
-    <TouchableOpacity onPress={handleLogout}>  {/* 👈 aqui */}
-      <Ionicons name="log-out-outline" size={26} color="#FFFFFF" />
-    </TouchableOpacity>
-  </View>
-</View>
-
-          {/* Detalhes do aluno */}
-          <View style={styles.detalhesAluno}>
-            <Text style={styles.curso}>Curso: {aluno.curso}</Text>
-            <Text style={styles.matriculaAluno}>Matrícula: {aluno.matricula}</Text>
-          </View>
+          <Header/>
         </View>
 
         {/* ── Card Carga Complementar ── */}
@@ -78,10 +60,6 @@ export default function DashboardScreen() {
                 <Text style={styles.badgeTexto}>{status}</Text>
               </View>
             </View>
-            <TouchableOpacity onPress={handleLogout}>
-               <Ionicons name="log-out-outline" size={26} color="#FFFFFF" />
-              </TouchableOpacity>
-
             <View style={styles.horasRow}>
               <Text style={styles.horasNumero}>{horasConcluidas}</Text>
               <Text style={styles.horasTotal}>/{horasTotal}h</Text>
@@ -109,48 +87,19 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F3F4F6' },
 
   headerAzul: {
-    backgroundColor: '#1E3A8A',
+    backgroundColor: '#004C94',
     paddingTop: 20,
     paddingHorizontal: 24,
     paddingBottom: 32,
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
   },
-  linhaSuperior: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 16,
-  },
-  saudacao: { fontSize: 22, fontWeight: 'bold', color: '#FFFFFF', marginBottom: 4 },
-  data: { fontSize: 13, color: '#93C5FD' },
-
-  detalhesAluno: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 12,
-    padding: 14,
-    gap: 4,
-  },
-  nomeCompleto: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginBottom: 2,
-  },
-  curso: {
-    fontSize: 13,
-    color: '#BFDBFE',
-  },
-  matriculaAluno: {
-    fontSize: 13,
-    color: '#93C5FD',
-    fontWeight: '500',
-  },
 
   cardWrapper: {
     paddingHorizontal: 20,
     marginTop: 20,
   },
+
   card: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
@@ -161,12 +110,14 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
+
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
   },
+
   cardTitulo: { fontSize: 14, color: '#6B7280', fontWeight: '500' },
   badge: {
     backgroundColor: '#EFF6FF',
@@ -174,12 +125,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 4,
   },
-  badgeTexto: { fontSize: 12, color: '#1E3A8A', fontWeight: '600' },
+
+  badgeTexto: { fontSize: 12, color: '#004C94', fontWeight: '600' },
   horasRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     marginBottom: 14,
   },
+
   horasNumero: { fontSize: 40, fontWeight: 'bold', color: '#111827', lineHeight: 44 },
   horasTotal: { fontSize: 18, color: '#6B7280', marginBottom: 4, marginLeft: 2 },
   barraFundo: {
@@ -189,11 +142,13 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginBottom: 12,
   },
+
   barraPreenchida: {
     height: '100%',
-    backgroundColor: '#1E3A8A',
+    backgroundColor: '#004C94',
     borderRadius: 4,
   },
+
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between' },
   footerTexto: { fontSize: 12, color: '#6B7280' },
 });

@@ -6,10 +6,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import Footer from '../components/Footer';
+
 import { useAuth } from '../contexts/AuthContext';
 import { listStudentSubmissions } from '../services/firebaseRepository';
 import { Submission } from '../models/Submission';
+
+//  Components
+import Footer from '../components/Footer';
 
 const abas = ['Todas', 'APROVADO', 'REPROVADO', 'PENDENTE'];
 
@@ -73,7 +76,7 @@ export default function RelatorioScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#1E3A8A" />
+        <StatusBar barStyle="light-content" backgroundColor="#004C94" />
 
         <View style={styles.headerAzul}>
           <View style={styles.linhaSuperior}>
@@ -112,7 +115,7 @@ export default function RelatorioScreen() {
 
         {carregando ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#1E3A8A" />
+            <ActivityIndicator size="large" color="#004C94" />
             <Text style={styles.loadingTexto}>Carregando atividades...</Text>
           </View>
         ) : (
@@ -139,7 +142,7 @@ export default function RelatorioScreen() {
                   >
                     <View style={styles.atividadeLinha}>
                       <View style={styles.atividadeIcone}>
-                        <Ionicons name="document-text-outline" size={18} color="#1E3A8A" />
+                        <Ionicons name="document-text-outline" size={18} color="#004C94" />
                       </View>
                       <View style={styles.atividadeInfo}>
                         <Text style={styles.atividadeTitulo}>{item.titulo}</Text>
@@ -180,7 +183,7 @@ export default function RelatorioScreen() {
                   <View style={styles.modalHandle} />
                   <View style={styles.modalHeader}>
                     <View style={styles.modalIcone}>
-                      <Ionicons name="document-text-outline" size={24} color="#1E3A8A" />
+                      <Ionicons name="document-text-outline" size={24} color="#004C94" />
                     </View>
                     <TouchableOpacity onPress={fecharModal} style={styles.modalFechar}>
                       <Ionicons name="close" size={22} color="#6B7280" />
@@ -243,7 +246,7 @@ export default function RelatorioScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F3F4F6' },
   headerAzul: {
-    backgroundColor: '#1E3A8A', paddingTop: 60, paddingHorizontal: 24, paddingBottom: 24,
+    backgroundColor: '#004C94', paddingTop: 60, paddingHorizontal: 24, paddingBottom: 24,
     borderBottomLeftRadius: 30, borderBottomRightRadius: 30,
   },
   linhaSuperior: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
@@ -259,7 +262,7 @@ const styles = StyleSheet.create({
   abasScroll: { maxHeight: 50, marginTop: 14 },
   abasContainer: { paddingHorizontal: 20, gap: 8, alignItems: 'center' },
   aba: { paddingHorizontal: 16, paddingVertical: 7, borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E5E7EB' },
-  abaAtiva: { backgroundColor: '#1E3A8A', borderColor: '#1E3A8A' },
+  abaAtiva: { backgroundColor: '#004C94', borderColor: '#004C94' },
   abaTexto: { fontSize: 13, color: '#6B7280', fontWeight: '500' },
   abaTextoAtivo: { color: '#FFFFFF', fontWeight: '700' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 },
@@ -308,6 +311,6 @@ const styles = StyleSheet.create({
   infoDescricao: { fontSize: 14, color: '#374151', lineHeight: 20 },
   motivoModalContainer: { flexDirection: 'row', alignItems: 'flex-start', backgroundColor: '#FEE2E2', borderRadius: 10, padding: 12, marginBottom: 20 },
   motivoModalTexto: { fontSize: 13, color: '#991B1B', flex: 1, lineHeight: 18 },
-  btnFechar: { backgroundColor: '#1E3A8A', borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 8 },
+  btnFechar: { backgroundColor: '#004C94', borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 8 },
   btnFecharTexto: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
 });
