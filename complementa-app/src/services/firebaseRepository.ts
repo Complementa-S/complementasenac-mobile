@@ -14,6 +14,7 @@ type BackendPerfil = {
 };
 
 const text = (value: unknown) => (value == null ? '' : String(value));
+
 const numberValue = (value: unknown) => {
   const number = Number(value);
   return Number.isFinite(number) ? Math.trunc(number) : 0;
@@ -25,6 +26,12 @@ const normalizeRole = (perfil: string): UserRole => {
   throw new Error('Usuario sem role valida no banco.');
 };
 
+const normalizeStatus = (value: unknown): Submission['status'] => {
+  const s = text(value).trim().toUpperCase();
+  if (s === 'APROVADO' || s === 'REPROVADO' || s === 'PENDENTE') return s;
+  return 'PENDENTE';
+};
+
 const submissionFromApi = (data: any, fallbackAluno = 'Aluno'): Submission => ({
   id: text(data.id || data.id_solicitacao),
   uidAluno: text(data.uid_aluno || data.uidAluno),
@@ -33,7 +40,7 @@ const submissionFromApi = (data: any, fallbackAluno = 'Aluno'): Submission => ({
   categoria: text(data.categoria || data.tipo || 'Extensao'),
   horasInformadas: numberValue(data.horas || data.horas_informadas),
   horasAprovadas: numberValue(data.horasAprovadas || data.horas_aprovadas),
-  status: (text(data.status || 'PENDENTE').toUpperCase() as Submission['status']) || 'PENDENTE',
+  status: normalizeStatus(data.status),
   urlCertificado: text(data.comprovanteUrl || data.url_certificado),
   dataEnvio: text(data.data || data.data_envio || data.data_evento),
   justificativaCoordenador: text(data.justificativaCoordenador || data.justificativa_coordenador),

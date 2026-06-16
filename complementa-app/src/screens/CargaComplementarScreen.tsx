@@ -43,7 +43,6 @@ export default function CargaComplementarScreen() {
   const [atividades, setAtividades] = useState<Submission[]>([]);
   const [carregando, setCarregando] = useState(true);
 
-  // Recarrega toda vez que a tela ganhar foco (ex: após enviar pelo Upload)
   useFocusEffect(
     useCallback(() => {
       async function carregar() {
@@ -75,7 +74,6 @@ export default function CargaComplementarScreen() {
       <View style={styles.container}>
         <StatusBar barStyle="light-content" backgroundColor="#004C94" />
 
-        {/* HEADER */}
         <View style={styles.headerAzul}>
           <View style={styles.linhaSuperior}>
             <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -102,10 +100,10 @@ export default function CargaComplementarScreen() {
                   <Text style={styles.badgeProgressoTexto}>Em progresso</Text>
                 </View>
               </View>
-              <Text style={styles.horasTexto}>
+              <View style={{ flexDirection: 'row', alignItems: 'flex-end', marginBottom: 14 }}>
                 <Text style={styles.horasNumero}>{totalHorasAprovadas}</Text>
                 <Text style={styles.horasTotal}>/200h</Text>
-              </Text>
+              </View>
               <View style={styles.barraFundo}>
                 <View style={[styles.barraPreenchida, { width: `${percentual}%` as any }]} />
               </View>
@@ -183,15 +181,6 @@ export default function CargaComplementarScreen() {
               </View>
             )}
 
-            {/* BOTÃO NOVA SUBMISSÃO */}
-            <TouchableOpacity
-              style={styles.botaoSubmissao}
-              onPress={() => navigation.navigate('Upload')}
-            >
-              <Ionicons name="add-circle-outline" size={20} color="#FFFFFF" />
-              <Text style={styles.botaoSubmissaoTexto}>Nova Submissão</Text>
-            </TouchableOpacity>
-
             <View style={{ height: 20 }} />
           </ScrollView>
         )}
@@ -221,9 +210,8 @@ const styles = StyleSheet.create({
   cardStatusTitulo: { fontSize: 14, color: '#6B7280' },
   badgeProgresso: { backgroundColor: '#EFF6FF', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 4 },
   badgeProgressoTexto: { fontSize: 12, color: '#004C94', fontWeight: '600' },
-  horasTexto: { marginBottom: 14 },
   horasNumero: { fontSize: 36, fontWeight: 'bold', color: '#111827' },
-  horasTotal: { fontSize: 18, color: '#6B7280' },
+  horasTotal: { fontSize: 18, color: '#6B7280', marginBottom: 4, marginLeft: 2 },
   barraFundo: { height: 8, backgroundColor: '#E5E7EB', borderRadius: 4, marginBottom: 12 },
   barraPreenchida: { height: 8, backgroundColor: '#004C94', borderRadius: 4 },
   cardStatusRodape: { flexDirection: 'row', justifyContent: 'space-between' },
@@ -256,9 +244,4 @@ const styles = StyleSheet.create({
   badgeStatusTexto: { fontSize: 11, fontWeight: '700' },
   vazioContainer: { alignItems: 'center', paddingVertical: 40, gap: 12 },
   vazioTexto: { fontSize: 15, color: '#9CA3AF' },
-  botaoSubmissao: {
-    backgroundColor: '#004C94', borderRadius: 14, paddingVertical: 16,
-    flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: 8,
-  },
-  botaoSubmissaoTexto: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
 });

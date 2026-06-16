@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   StyleSheet, Text, View, StatusBar, ScrollView,
   TouchableOpacity, Modal, Pressable, ActivityIndicator,
@@ -10,8 +10,6 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
 import { listStudentSubmissions } from '../services/firebaseRepository';
 import { Submission } from '../models/Submission';
-
-//  Components
 import Footer from '../components/Footer';
 
 const abas = ['Todas', 'APROVADO', 'REPROVADO', 'PENDENTE'];
@@ -32,7 +30,6 @@ export default function RelatorioScreen() {
   const [atividadeSelecionada, setAtividadeSelecionada] = useState<Submission | null>(null);
   const [modalVisivel, setModalVisivel] = useState(false);
 
-  // Recarrega toda vez que a tela ganhar foco (ex: após enviar atividade)
   useFocusEffect(
     useCallback(() => {
       async function carregar() {
@@ -91,9 +88,9 @@ export default function RelatorioScreen() {
 
         <View style={styles.resumoContainer}>
           {[
-            { icone: 'list-outline',      numero: atividades.length, label: 'Registros'      },
+            { icone: 'list-outline',      numero: atividades.length, label: 'Registros'       },
             { icone: 'time-outline',      numero: `${totalHoras}h`,  label: 'Horas aprovadas' },
-            { icone: 'hourglass-outline', numero: pendentes,         label: 'Pendentes'       },
+            { icone: 'hourglass-outline', numero: pendentes,         label: 'Pendentes'        },
           ].map((item, i) => (
             <View key={i} style={styles.cardResumo}>
               <Ionicons name={item.icone as any} size={18} color="#6B7280" style={{ marginBottom: 4 }} />
