@@ -1,338 +1,229 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   StyleSheet, Text, View, StatusBar, ScrollView, TouchableOpacity,
   Modal, TextInput, Alert, ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import * as DocumentPicker from 'expo-document-picker';
 import Header from '../components/Header';
+import { useAuth } from '../contexts/AuthContext';
+import { getStudentSubmissions, submitActivity } from '../controllers/submissionController';
+import { fetchResumoAluno } from '../services/alunoApi';
+import { MAX_HORAS_POR_ATIVIDADE } from '../constants/hoursLimits';
+import { categoryColors, categoryIcons, theme } from '../constants/theme';
+import { Submission } from '../models/Submission';
+import { formatShortDate, horasPorCategoria, uiStatus } from '../utils/formatters';
 
-type Arquivo = {
-  nome: string;
-  uri: string;
-  tipo: string;
-  tamanho: number;
-};
-
-type Submissao = {
-  id: string;
-  titulo: string;
-  categoria: string;
-  descricao: string;
-  arquivo: Arquivo | null;
-  status: 'Pendente' | 'Aprovado' | 'Indeferida';
-  data: string;
-  horas: string;
-};
-
-const categorias = ['Ensino', 'Extensão', 'Pesquisa', 'Outros'];
-
-const corCategoria: Record<string, string> = {
-  Ensino:   '#3B82F6',
-  Extensão: '#10B981',
-  Pesquisa: '#F59E0B',
-  Outros:   '#8B5CF6',
-};
-
-const iconeCategoria: Record<string, any> = {
-  Ensino:   'school-outline',
-  Extensão: 'people-outline',
-  Pesquisa: 'briefcase-outline',
-  Outros:   'ribbon-outline',
-};
-
-const totaisCategoria: Record<string, number> = {
-  Ensino: 60, Extensão: 80, Pesquisa: 40, Outros: 20,
-};
+const categorias = ['Ensino', 'Extensao', 'Pesquisa'];
+const totaisCategoria: Record<string, number> = { Ensino: 60, Extensao: 80, Pesquisa: 40 };
 
 export default function CargaComplementarScreen() {
   const navigation = useNavigation<any>();
+  const { user } = useAuth();
 
   const [modalVisible, setModalVisible] = useState(false);
   const [enviando, setEnviando] = useState(false);
-
+  const [loading, setLoading] = useState(true);
   const [titulo, setTitulo] = useState('');
   const [categoria, setCategoria] = useState('');
-  const [descricao, setDescricao] = useState('');
   const [horas, setHoras] = useState('');
-  const [arquivo, setArquivo] = useState<Arquivo | null>(null);
+  const [arquivo, setArquivo] = useState<{ nome: string; uri: string; mimeType?: string } | null>(null);
+  const [submissoes, setSubmissoes] = useState<Submission[]>([]);
+  const [resumo, setResumo] = useState<any>(null);
 
-  const [submissoes, setSubmissoes] = useState<Submissao[]>([]);
+  const load = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    try {
+      const [lista, resumoData] = await Promise.all([
+        getStudentSubmissions(user),
+        fetchResumoAluno(user.token),
+      ]);
+      setSubmissoes(lista);
+      setResumo(resumoData);
+    } catch (error: any) {
+      Alert.alert('Erro', error?.message || 'Nao foi possivel carregar os dados.');
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
 
-  const totalHorasAprovadas = submissoes
-    .filter(s => s.status === 'Aprovado')
-    .reduce((acc, s) => acc + parseInt(s.horas || '0'), 0);
+  useFocusEffect(useCallback(() => { load(); }, [load]));
 
-  const percentual = Math.min((totalHorasAprovadas / 200) * 100, 100).toFixed(0);
+  const horasConcluidas = resumo?.horasConcluidas ?? 0;
+  const horasNecessarias = resumo?.horasNecessarias ?? 200;
+  const percentual = Math.min((horasConcluidas / horasNecessarias) * 100, 100).toFixed(0);
 
   const abrirDocumento = async () => {
-    try {
-      const resultado = await DocumentPicker.getDocumentAsync({
-        type: ['application/pdf', 'image/*',
-               'application/msword',
-               'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
-        copyToCacheDirectory: true,
-      });
-
-      if (!resultado.canceled && resultado.assets.length > 0) {
-        const asset = resultado.assets[0];
-        setArquivo({
-          nome: asset.name,
-          uri: asset.uri,
-          tipo: asset.mimeType || 'desconhecido',
-          tamanho: asset.size || 0,
-        });
-      }
-    } catch {
-      Alert.alert('Erro', 'Não foi possível abrir o arquivo.');
+    const resultado = await DocumentPicker.getDocumentAsync({
+      type: ['application/pdf', 'image/*'],
+      copyToCacheDirectory: true,
+    });
+    if (!resultado.canceled && resultado.assets.length > 0) {
+      const asset = resultado.assets[0];
+      setArquivo({ nome: asset.name, uri: asset.uri, mimeType: asset.mimeType || undefined });
     }
-  };
-
-  const formatarTamanho = (bytes: number) => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
   const limparFormulario = () => {
     setTitulo('');
     setCategoria('');
-    setDescricao('');
     setHoras('');
     setArquivo(null);
   };
 
   const enviarSubmissao = async () => {
-    if (!titulo.trim()) { Alert.alert('Atenção', 'Informe o título da atividade.'); return; }
-    if (!categoria) { Alert.alert('Atenção', 'Selecione uma categoria.'); return; }
-    if (!horas.trim() || isNaN(Number(horas))) { Alert.alert('Atenção', 'Informe a quantidade de horas válida.'); return; }
-    if (!arquivo) { Alert.alert('Atenção', 'Anexe um documento comprobatório.'); return; }
+    if (!user) return;
+    if (!titulo.trim()) { Alert.alert('Atencao', 'Informe o titulo da atividade.'); return; }
+    if (!categoria) { Alert.alert('Atencao', 'Selecione uma categoria.'); return; }
+    if (!horas.trim()) { Alert.alert('Atencao', 'Informe a quantidade de horas.'); return; }
+    if (!arquivo) { Alert.alert('Atencao', 'Anexe um comprovante.'); return; }
 
     setEnviando(true);
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    const nova: Submissao = {
-      id: `SUB${Date.now()}`,
-      titulo: titulo.trim(),
-      categoria,
-      descricao: descricao.trim(),
-      arquivo,
-      status: 'Pendente',
-      data: new Date().toLocaleDateString('pt-BR'),
-      horas,
-    };
-
-    setSubmissoes(prev => [nova, ...prev]);
-    setEnviando(false);
-    setModalVisible(false);
-    limparFormulario();
-    Alert.alert('Enviado!', 'Sua atividade foi enviada para análise do coordenador.');
+    try {
+      await submitActivity(user, {
+        titulo: titulo.trim(),
+        categoria,
+        horas: Number(horas),
+        file: { uri: arquivo.uri, name: arquivo.nome, mimeType: arquivo.mimeType },
+      });
+      setModalVisible(false);
+      limparFormulario();
+      await load();
+      Alert.alert('Enviado!', 'Atividade enviada para analise do coordenador.');
+    } catch (error: any) {
+      Alert.alert('Erro', error?.message || 'Nao foi possivel enviar.');
+    } finally {
+      setEnviando(false);
+    }
   };
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1E3A8A" />
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.primaryDark} />
 
-      {/* HEADER */}
-      <View style={styles.headerAzul}>
+      <View style={styles.header}>
         <View style={styles.linhaSuperior}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back-outline" size={24} color="#FFFFFF" />
           </TouchableOpacity>
           <Text style={styles.headerTitulo}>Carga Complementar</Text>
-          <Ionicons name="notifications-outline" size={24} color="#FFFFFF" />
+          <View style={{ width: 24 }} />
         </View>
       </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-
-        {/* CARD STATUS */}
-        <View style={styles.cardStatus}>
-          <View style={styles.cardStatusTopo}>
-            <Text style={styles.cardStatusTitulo}>Carga complementar</Text>
-            <View style={styles.badgeProgresso}>
-              <Text style={styles.badgeProgressoTexto}>Em progresso</Text>
-            </View>
-          </View>
-          <Text style={styles.horasTexto}>
-            <Text style={styles.horasNumero}>{totalHorasAprovadas}</Text>
-            <Text style={styles.horasTotal}>/200h</Text>
-          </Text>
-          <View style={styles.barraFundo}>
-            <View style={[styles.barraPreenchida, { width: `${percentual}%` as any }]} />
-          </View>
-          <View style={styles.cardStatusRodape}>
-            <Text style={styles.percentualTexto}>{percentual}% concluído</Text>
-            <Text style={styles.atividadesTexto}>
-              {submissoes.filter(s => s.status === 'Aprovado').length} atividades aprovadas
+      {loading ? (
+        <ActivityIndicator color={theme.colors.primary} style={{ marginTop: 40 }} />
+      ) : (
+        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+          <View style={styles.cardStatus}>
+            <Text style={styles.cardStatusTitulo}>Progresso geral</Text>
+            <Text style={styles.horasTexto}>
+              <Text style={styles.horasNumero}>{horasConcluidas}</Text>
+              <Text style={styles.horasTotal}>/{horasNecessarias}h</Text>
             </Text>
-          </View>
-        </View>
-
-        {/* CATEGORIAS */}
-        <Text style={styles.secaoTitulo}>Categorias</Text>
-        {categorias.map((cat, index) => {
-          const horasCat = submissoes
-            .filter(s => s.categoria === cat && s.status === 'Aprovado')
-            .reduce((acc, s) => acc + parseInt(s.horas || '0'), 0);
-          const pct = Math.min((horasCat / totaisCategoria[cat]) * 100, 100);
-          const cor = corCategoria[cat];
-          return (
-            <View key={index} style={styles.cardCategoria}>
-              <View style={[styles.categoriaIcone, { backgroundColor: cor + '20' }]}>
-                <Ionicons name={iconeCategoria[cat]} size={22} color={cor} />
-              </View>
-              <View style={styles.categoriaInfo}>
-                <Text style={styles.categoriaTitulo}>{cat}</Text>
-                <View style={styles.miniBarraFundo}>
-                  <View style={[styles.miniBarraPreenchida, { width: `${pct}%` as any, backgroundColor: cor }]} />
-                </View>
-              </View>
-              <View style={styles.categoriaHoras}>
-                <Text style={[styles.categoriaHorasNumero, { color: cor }]}>{horasCat}h</Text>
-                <Text style={styles.categoriaHorasTotal}>/{totaisCategoria[cat]}h</Text>
-              </View>
+            <View style={styles.barraFundo}>
+              <View style={[styles.barraPreenchida, { width: `${percentual}%` as any }]} />
             </View>
-          );
-        })}
+            <Text style={styles.percentualTexto}>{percentual}% concluido</Text>
+          </View>
 
-        {/* MINHAS SUBMISSÕES */}
-        {submissoes.length > 0 && (
-          <>
-            <Text style={[styles.secaoTitulo, { marginTop: 8 }]}>Minhas Submissões</Text>
-            {submissoes.map((sub, i) => (
-              <View key={i} style={styles.cardSubmissao}>
-                <View style={styles.submissaoLinha}>
-                  <View style={[styles.submissaoIcone, { backgroundColor: (corCategoria[sub.categoria] || '#6B7280') + '20' }]}>
-                    <Ionicons name={iconeCategoria[sub.categoria] || 'document-outline'} size={18} color={corCategoria[sub.categoria] || '#6B7280'} />
-                  </View>
-                  <View style={styles.submissaoInfo}>
-                    <Text style={styles.submissaoTitulo}>{sub.titulo}</Text>
-                    <Text style={styles.submissaoMeta}>{sub.categoria} · {sub.data} · {sub.horas}h</Text>
-                    {sub.arquivo && (
-                      <View style={styles.submissaoArquivo}>
-                        <Ionicons name="attach-outline" size={12} color="#6B7280" />
-                        <Text style={styles.submissaoArquivoNome} numberOfLines={1}>{sub.arquivo.nome}</Text>
-                      </View>
-                    )}
-                  </View>
-                  <View style={[styles.badgeStatus, {
-                    backgroundColor: sub.status === 'Aprovado' ? '#D1FAE5' : sub.status === 'Indeferida' ? '#FEE2E2' : '#FEF9C3'
-                  }]}>
-                    <Text style={[styles.badgeStatusTexto, {
-                      color: sub.status === 'Aprovado' ? '#065F46' : sub.status === 'Indeferida' ? '#991B1B' : '#92400E'
-                    }]}>{sub.status}</Text>
+          <Text style={styles.secaoTitulo}>Categorias</Text>
+          {categorias.map((cat) => {
+            const horasCat = horasPorCategoria(submissoes, cat);
+            const pct = Math.min((horasCat / totaisCategoria[cat]) * 100, 100);
+            const cor = categoryColors[cat] || theme.colors.primary;
+            return (
+              <View key={cat} style={styles.cardCategoria}>
+                <View style={[styles.categoriaIcone, { backgroundColor: cor + '20' }]}>
+                  <Ionicons name={categoryIcons[cat] as any} size={22} color={cor} />
+                </View>
+                <View style={styles.categoriaInfo}>
+                  <Text style={styles.categoriaTitulo}>{cat}</Text>
+                  <View style={styles.miniBarraFundo}>
+                    <View style={[styles.miniBarraPreenchida, { width: `${pct}%` as any, backgroundColor: cor }]} />
                   </View>
                 </View>
+                <Text style={[styles.categoriaHoras, { color: cor }]}>{horasCat}h</Text>
               </View>
-            ))}
-          </>
-        )}
+            );
+          })}
 
-        {/* BOTÃO NOVA SUBMISSÃO */}
-        <TouchableOpacity style={styles.botaoSubmissao} onPress={() => setModalVisible(true)}>
-          <Ionicons name="add-circle-outline" size={20} color="#FFFFFF" />
-          <Text style={styles.botaoSubmissaoTexto}>Nova Submissão</Text>
-        </TouchableOpacity>
+          <Text style={styles.secaoTitulo}>Minhas submissoes</Text>
+          {submissoes.length === 0 ? (
+            <Text style={styles.vazio}>Nenhuma atividade enviada ainda.</Text>
+          ) : (
+            submissoes.map((sub) => {
+              const status = uiStatus(sub.status);
+              return (
+                <View key={sub.id} style={styles.cardSubmissao}>
+                  <Text style={styles.submissaoTitulo}>{sub.titulo}</Text>
+                  <Text style={styles.submissaoMeta}>
+                    {sub.categoria} · {formatShortDate(sub.dataEnvio)} · {sub.horasInformadas}h
+                  </Text>
+                  <View style={[styles.badgeStatus, status.tone === 'approved' && styles.badgeApproved, status.tone === 'rejected' && styles.badgeRejected]}>
+                    <Text style={styles.badgeStatusTexto}>{status.label}</Text>
+                  </View>
+                </View>
+              );
+            })
+          )}
 
-        <View style={{ height: 20 }} />
-      </ScrollView>
+          <TouchableOpacity style={styles.botaoSubmissao} onPress={() => setModalVisible(true)}>
+            <Ionicons name="add-circle-outline" size={20} color="#FFFFFF" />
+            <Text style={styles.botaoSubmissaoTexto}>Nova submissao</Text>
+          </TouchableOpacity>
+          <View style={{ height: 20 }} />
+        </ScrollView>
+      )}
 
-      {/* MODAL */}
       <Modal visible={modalVisible} animationType="slide" presentationStyle="pageSheet">
         <View style={styles.modalContainer}>
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={() => { setModalVisible(false); limparFormulario(); }}>
-              <Ionicons name="close-outline" size={28} color="#111827" />
+              <Ionicons name="close-outline" size={28} color={theme.colors.text} />
             </TouchableOpacity>
-            <Text style={styles.modalTitulo}>Nova Submissão</Text>
+            <Text style={styles.modalTitulo}>Nova submissao</Text>
             <View style={{ width: 28 }} />
           </View>
 
-          <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
-
-            <Text style={styles.modalLabel}>Título da atividade *</Text>
-            <TextInput
-              style={styles.modalInput}
-              value={titulo}
-              onChangeText={setTitulo}
-              placeholder="Ex: Curso de Python Avançado"
-              placeholderTextColor="#9CA3AF"
-            />
+          <ScrollView style={styles.modalScroll}>
+            <Text style={styles.modalLabel}>Titulo *</Text>
+            <TextInput style={styles.modalInput} value={titulo} onChangeText={setTitulo} placeholder="Ex: Curso de Python" />
 
             <Text style={styles.modalLabel}>Categoria *</Text>
             <View style={styles.categoriasGrid}>
-              {categorias.map(cat => (
+              {categorias.map((cat) => (
                 <TouchableOpacity
                   key={cat}
-                  style={[styles.categoriaChip, categoria === cat && { backgroundColor: corCategoria[cat], borderColor: corCategoria[cat] }]}
+                  style={[styles.categoriaChip, categoria === cat && { backgroundColor: categoryColors[cat], borderColor: categoryColors[cat] }]}
                   onPress={() => setCategoria(cat)}
                 >
-                  <Ionicons name={iconeCategoria[cat]} size={16} color={categoria === cat ? '#FFFFFF' : corCategoria[cat]} />
-                  <Text style={[styles.categoriaChipTexto, categoria === cat && { color: '#FFFFFF' }]}>{cat}</Text>
+                  <Text style={[styles.categoriaChipTexto, categoria === cat && { color: '#FFF' }]}>{cat}</Text>
                 </TouchableOpacity>
               ))}
             </View>
 
-            <Text style={styles.modalLabel}>Quantidade de horas *</Text>
+            <Text style={styles.modalLabel}>Horas * (max. {MAX_HORAS_POR_ATIVIDADE}h)</Text>
             <TextInput
               style={styles.modalInput}
               value={horas}
               onChangeText={setHoras}
-              placeholder="Ex: 40"
-              placeholderTextColor="#9CA3AF"
               keyboardType="numeric"
+              placeholder="Ex: 8"
+              maxLength={2}
             />
 
-            <Text style={styles.modalLabel}>Descrição</Text>
-            <TextInput
-              style={[styles.modalInput, styles.modalInputMultilinha]}
-              value={descricao}
-              onChangeText={setDescricao}
-              placeholder="Descreva brevemente a atividade realizada..."
-              placeholderTextColor="#9CA3AF"
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
-            />
-
-            <Text style={styles.modalLabel}>Documento comprobatório *</Text>
+            <Text style={styles.modalLabel}>Comprovante *</Text>
             <TouchableOpacity style={styles.botaoAnexar} onPress={abrirDocumento}>
-              <Ionicons name="cloud-upload-outline" size={24} color="#1E3A8A" />
-              <Text style={styles.botaoAnexarTexto}>{arquivo ? 'Trocar arquivo' : 'Selecionar arquivo'}</Text>
-              <Text style={styles.botaoAnexarSub}>PDF, imagem ou Word</Text>
+              <Ionicons name="cloud-upload-outline" size={22} color={theme.colors.primary} />
+              <Text style={styles.botaoAnexarTexto}>{arquivo ? arquivo.nome : 'Selecionar arquivo'}</Text>
             </TouchableOpacity>
 
-            {arquivo && (
-              <View style={styles.arquivoSelecionado}>
-                <Ionicons name="document-attach-outline" size={20} color="#1E3A8A" />
-                <View style={styles.arquivoInfo}>
-                  <Text style={styles.arquivoNome} numberOfLines={1}>{arquivo.nome}</Text>
-                  <Text style={styles.arquivoTamanho}>{formatarTamanho(arquivo.tamanho)}</Text>
-                </View>
-                <TouchableOpacity onPress={() => setArquivo(null)}>
-                  <Ionicons name="close-circle-outline" size={20} color="#EF4444" />
-                </TouchableOpacity>
-              </View>
-            )}
-
-            <TouchableOpacity
-              style={[styles.botaoEnviar, enviando && { opacity: 0.7 }]}
-              onPress={enviarSubmissao}
-              disabled={enviando}
-            >
-              {enviando ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <>
-                  <Ionicons name="send-outline" size={18} color="#FFFFFF" />
-                  <Text style={styles.botaoEnviarTexto}>Enviar para análise</Text>
-                </>
-              )}
+            <TouchableOpacity style={styles.botaoEnviar} onPress={enviarSubmissao} disabled={enviando}>
+              {enviando ? <ActivityIndicator color="#FFF" /> : <Text style={styles.botaoEnviarTexto}>Enviar para analise</Text>}
             </TouchableOpacity>
-
-            <View style={{ height: 40 }} />
           </ScrollView>
         </View>
       </Modal>
@@ -343,101 +234,127 @@ export default function CargaComplementarScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F3F4F6' },
-  headerAzul: {
-    backgroundColor: '#1E3A8A', paddingTop: 60, paddingHorizontal: 24, paddingBottom: 24,
-    borderBottomLeftRadius: 30, borderBottomRightRadius: 30,
+  container: { flex: 1, backgroundColor: theme.colors.background },
+  header: {
+    backgroundColor: theme.colors.primaryDark,
+    paddingTop: 60,
+    paddingHorizontal: 24,
+    paddingBottom: 24,
+    borderBottomLeftRadius: theme.radius.header,
+    borderBottomRightRadius: theme.radius.header,
   },
   linhaSuperior: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   headerTitulo: { fontSize: 18, fontWeight: 'bold', color: '#FFFFFF' },
   scrollView: { flex: 1, padding: 20 },
   cardStatus: {
-    backgroundColor: '#FFFFFF', borderRadius: 16, padding: 20, marginBottom: 24,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07, shadowRadius: 6, elevation: 3,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.card,
+    padding: 20,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
-  cardStatusTopo: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  cardStatusTitulo: { fontSize: 14, color: '#6B7280' },
-  badgeProgresso: { backgroundColor: '#EFF6FF', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 4 },
-  badgeProgressoTexto: { fontSize: 12, color: '#1E3A8A', fontWeight: '600' },
-  horasTexto: { marginBottom: 14 },
-  horasNumero: { fontSize: 36, fontWeight: 'bold', color: '#111827' },
-  horasTotal: { fontSize: 18, color: '#6B7280' },
-  barraFundo: { height: 8, backgroundColor: '#E5E7EB', borderRadius: 4, marginBottom: 12 },
-  barraPreenchida: { height: 8, backgroundColor: '#1E3A8A', borderRadius: 4 },
-  cardStatusRodape: { flexDirection: 'row', justifyContent: 'space-between' },
-  percentualTexto: { fontSize: 13, color: '#6B7280' },
-  atividadesTexto: { fontSize: 13, color: '#6B7280' },
-  secaoTitulo: { fontSize: 16, fontWeight: '700', color: '#111827', marginBottom: 12 },
+  cardStatusTitulo: { fontSize: 14, color: theme.colors.textMuted, marginBottom: 8 },
+  horasTexto: { marginBottom: 12 },
+  horasNumero: { fontSize: 34, fontWeight: 'bold', color: theme.colors.text },
+  horasTotal: { fontSize: 18, color: theme.colors.textMuted },
+  barraFundo: { height: 8, backgroundColor: '#E5E7EB', borderRadius: 4, marginBottom: 8 },
+  barraPreenchida: { height: 8, backgroundColor: theme.colors.primary, borderRadius: 4 },
+  percentualTexto: { fontSize: 13, color: theme.colors.textMuted },
+  secaoTitulo: { fontSize: 16, fontWeight: '700', color: theme.colors.text, marginBottom: 12, marginTop: 8 },
   cardCategoria: {
-    backgroundColor: '#FFFFFF', borderRadius: 14, padding: 16,
-    flexDirection: 'row', alignItems: 'center', marginBottom: 10,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
+    backgroundColor: theme.colors.card,
+    borderRadius: 14,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   categoriaIcone: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 14 },
   categoriaInfo: { flex: 1 },
-  categoriaTitulo: { fontSize: 15, fontWeight: '600', color: '#111827', marginBottom: 8 },
+  categoriaTitulo: { fontSize: 15, fontWeight: '600', color: theme.colors.text, marginBottom: 8 },
   miniBarraFundo: { height: 5, backgroundColor: '#E5E7EB', borderRadius: 3 },
   miniBarraPreenchida: { height: 5, borderRadius: 3 },
-  categoriaHoras: { flexDirection: 'row', alignItems: 'baseline', marginLeft: 12 },
-  categoriaHorasNumero: { fontSize: 16, fontWeight: 'bold' },
-  categoriaHorasTotal: { fontSize: 12, color: '#9CA3AF' },
+  categoriaHoras: { fontSize: 16, fontWeight: 'bold' },
+  vazio: { color: theme.colors.textMuted, marginBottom: 16 },
   cardSubmissao: {
-    backgroundColor: '#FFFFFF', borderRadius: 14, padding: 14, marginBottom: 10,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
+    backgroundColor: theme.colors.card,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
-  submissaoLinha: { flexDirection: 'row', alignItems: 'center' },
-  submissaoIcone: { width: 38, height: 38, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  submissaoInfo: { flex: 1 },
-  submissaoTitulo: { fontSize: 14, fontWeight: '700', color: '#111827', marginBottom: 2 },
-  submissaoMeta: { fontSize: 11, color: '#6B7280', marginBottom: 4 },
-  submissaoArquivo: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  submissaoArquivoNome: { fontSize: 11, color: '#6B7280', flex: 1 },
-  badgeStatus: { borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4, marginLeft: 8 },
-  badgeStatusTexto: { fontSize: 11, fontWeight: '700' },
+  submissaoTitulo: { fontSize: 14, fontWeight: '700', color: theme.colors.text },
+  submissaoMeta: { fontSize: 12, color: theme.colors.textMuted, marginVertical: 4 },
+  badgeStatus: { alignSelf: 'flex-start', backgroundColor: theme.colors.pillPending, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4 },
+  badgeApproved: { backgroundColor: theme.colors.pillApproved },
+  badgeRejected: { backgroundColor: theme.colors.pillRejected },
+  badgeStatusTexto: { fontSize: 11, fontWeight: '700', color: theme.colors.text },
   botaoSubmissao: {
-    backgroundColor: '#1E3A8A', borderRadius: 14, paddingVertical: 16,
-    flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: 8,
+    backgroundColor: theme.colors.primary,
+    borderRadius: 14,
+    paddingVertical: 16,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 8,
   },
   botaoSubmissaoTexto: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
-  modalContainer: { flex: 1, backgroundColor: '#FFFFFF' },
+  modalContainer: { flex: 1, backgroundColor: theme.colors.card },
   modalHeader: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 20, paddingTop: 60, paddingBottom: 20,
-    borderBottomWidth: 1, borderBottomColor: '#F3F4F6',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
   },
-  modalTitulo: { fontSize: 18, fontWeight: '700', color: '#111827' },
+  modalTitulo: { fontSize: 18, fontWeight: '700', color: theme.colors.text },
   modalScroll: { flex: 1, padding: 20 },
-  modalLabel: { fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 8, marginTop: 4 },
+  modalLabel: { fontSize: 13, fontWeight: '600', color: theme.colors.text, marginBottom: 8, marginTop: 4 },
   modalInput: {
-    borderWidth: 1.5, borderColor: '#E5E7EB', borderRadius: 12,
-    paddingHorizontal: 14, paddingVertical: 12, fontSize: 14,
-    color: '#111827', backgroundColor: '#F9FAFB', marginBottom: 16,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 14,
+    color: theme.colors.text,
+    backgroundColor: theme.colors.background,
+    marginBottom: 16,
   },
-  modalInputMultilinha: { height: 100, paddingTop: 12 },
   categoriasGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 16 },
   categoriaChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    borderWidth: 1.5, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10,
-    borderColor: '#E5E7EB', backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.background,
   },
-  categoriaChipTexto: { fontSize: 13, fontWeight: '600', color: '#374151' },
+  categoriaChipTexto: { fontSize: 13, fontWeight: '600', color: theme.colors.text },
   botaoAnexar: {
-    borderWidth: 2, borderColor: '#DBEAFE', borderStyle: 'dashed', borderRadius: 14,
-    padding: 20, alignItems: 'center', backgroundColor: '#EFF6FF', marginBottom: 12, gap: 6,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
+    borderStyle: 'dashed',
+    borderRadius: 14,
+    padding: 20,
+    alignItems: 'center',
+    backgroundColor: theme.colors.accentSoft,
+    marginBottom: 20,
   },
-  botaoAnexarTexto: { fontSize: 15, fontWeight: '600', color: '#1E3A8A' },
-  botaoAnexarSub: { fontSize: 12, color: '#6B7280' },
-  arquivoSelecionado: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#EFF6FF',
-    borderRadius: 12, padding: 12, marginBottom: 20, gap: 10,
-    borderWidth: 1, borderColor: '#BFDBFE',
-  },
-  arquivoInfo: { flex: 1 },
-  arquivoNome: { fontSize: 13, fontWeight: '600', color: '#1E3A8A' },
-  arquivoTamanho: { fontSize: 11, color: '#6B7280', marginTop: 2 },
+  botaoAnexarTexto: { fontSize: 14, fontWeight: '600', color: theme.colors.primary, marginTop: 6 },
   botaoEnviar: {
-    backgroundColor: '#1E3A8A', borderRadius: 14, paddingVertical: 16,
-    flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: 4,
+    backgroundColor: theme.colors.primary,
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: 'center',
   },
   botaoEnviarTexto: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
 });

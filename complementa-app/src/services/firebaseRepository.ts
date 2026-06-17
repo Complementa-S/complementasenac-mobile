@@ -52,6 +52,10 @@ export async function loginWithFirebase(email: string, password: string): Promis
   const token = await credential.user.getIdToken();
   const perfil = await apiRequest<BackendPerfil>('/api/auth/me', { token });
   const role = normalizeRole(perfil.perfil);
+  if (role !== 'ALUNO') {
+    await signOut(auth);
+    throw new Error('Acesso mobile disponivel apenas para alunos.');
+  }
 
   return {
     uid: credential.user.uid,
