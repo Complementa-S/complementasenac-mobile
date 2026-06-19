@@ -53,7 +53,7 @@ export default function UploadScreen() {
 
     try {
       setIsUploading(true);
-
+      //@ts-ignore
       // 👇 Usa o usuário logado, sem login hardcoded
       const resposta = await createSubmission(user, {
         titulo,
