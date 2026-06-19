@@ -10,6 +10,22 @@ import { useAuth } from '../contexts/AuthContext';
 import { listStudentSubmissions } from '../services/firebaseRepository';
 import { Submission } from '../models/Submission';
 
+// Mapa de variações que o banco pode salvar → chave padronizada
+const normalizarCategoria = (cat: string): string => {
+  const map: Record<string, string> = {
+    'ensino':    'Ensino',
+    'extensao':  'Extensão',
+    'extensão':  'Extensão',
+    'extension': 'Extensão',
+    'pesquisa':  'Pesquisa',
+    'research':  'Pesquisa',
+    'outros':    'Outros',
+    'other':     'Outros',
+    'others':    'Outros',
+  };
+  return map[cat?.toLowerCase()?.trim()] || 'Outros';
+};
+
 const categorias = ['Ensino', 'Extensão', 'Pesquisa', 'Outros'];
 
 const corCategoria: Record<string, string> = {
@@ -27,13 +43,7 @@ const iconeCategoria: Record<string, any> = {
 };
 
 const totaisCategoria: Record<string, number> = {
-  Ensino: 60, Extensão: 80, Pesquisa: 40, Outros: 20,
-};
-
-const statusConfig: Record<string, { bg: string; cor: string; texto: string }> = {
-  APROVADO:  { bg: '#D1FAE5', cor: '#065F46', texto: 'Aprovado'  },
-  REPROVADO: { bg: '#FEE2E2', cor: '#991B1B', texto: 'Reprovado' },
-  PENDENTE:  { bg: '#FEF9C3', cor: '#92400E', texto: 'Pendente'  },
+  Ensino: 100, Extensão: 100, Pesquisa: 100, Outros: 100,
 };
 
 export default function CargaComplementarScreen() {
@@ -61,13 +71,13 @@ export default function CargaComplementarScreen() {
     }, [user])
   );
 
-  const totalHorasAprovadas = atividades
-    .filter(s => s.status === 'APROVADO')
+  const aprovadas = atividades.filter(s => s.status === 'APROVADO');
+
+  const totalHorasAprovadas = aprovadas
     .reduce((acc, s) => acc + (s.horasAprovadas || s.horasInformadas || 0), 0);
 
-  const percentual = Math.min((totalHorasAprovadas / 200) * 100, 100).toFixed(0);
-
-  const atividadesAprovadas = atividades.filter(s => s.status === 'APROVADO').length;
+  const percentual = Math.min((totalHorasAprovadas / 100) * 100, 100).toFixed(0);
+  const atividadesAprovadas = aprovadas.length;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -102,7 +112,7 @@ export default function CargaComplementarScreen() {
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'flex-end', marginBottom: 14 }}>
                 <Text style={styles.horasNumero}>{totalHorasAprovadas}</Text>
-                <Text style={styles.horasTotal}>/200h</Text>
+                <Text style={styles.horasTotal}>/100h</Text>
               </View>
               <View style={styles.barraFundo}>
                 <View style={[styles.barraPreenchida, { width: `${percentual}%` as any }]} />
@@ -113,14 +123,11 @@ export default function CargaComplementarScreen() {
               </View>
             </View>
 
-            {/* CATEGORIAS */}
+            {/* CATEGORIAS — com normalização */}
             <Text style={styles.secaoTitulo}>Categorias</Text>
             {categorias.map((cat, index) => {
-              const horasCat = atividades
-                .filter(s => {
-                  const catNorm = s.categoria?.toLowerCase();
-                  return catNorm === cat.toLowerCase() && s.status === 'APROVADO';
-                })
+              const horasCat = aprovadas
+                .filter(s => normalizarCategoria(s.categoria) === cat)
                 .reduce((acc, s) => acc + (s.horasAprovadas || s.horasInformadas || 0), 0);
               const pct = Math.min((horasCat / totaisCategoria[cat]) * 100, 100);
               const cor = corCategoria[cat];
@@ -132,7 +139,10 @@ export default function CargaComplementarScreen() {
                   <View style={styles.categoriaInfo}>
                     <Text style={styles.categoriaTitulo}>{cat}</Text>
                     <View style={styles.miniBarraFundo}>
-                      <View style={[styles.miniBarraPreenchida, { width: `${pct}%` as any, backgroundColor: cor }]} />
+                      <View style={[
+                        styles.miniBarraPreenchida,
+                        { width: `${pct}%` as any, backgroundColor: cor }
+                      ]} />
                     </View>
                   </View>
                   <View style={styles.categoriaHoras}>
@@ -142,37 +152,6 @@ export default function CargaComplementarScreen() {
                 </View>
               );
             })}
-
-            {/* MINHAS SUBMISSÕES */}
-            {atividades.length > 0 && (
-              <>
-                <Text style={[styles.secaoTitulo, { marginTop: 8 }]}>Minhas Submissões</Text>
-                {atividades.map((sub, i) => {
-                  const catKey = categorias.find(c => c.toLowerCase() === sub.categoria?.toLowerCase()) || 'Outros';
-                  const cor = corCategoria[catKey] || '#6B7280';
-                  const icone = iconeCategoria[catKey] || 'document-outline';
-                  const cfg = statusConfig[sub.status] ?? statusConfig['PENDENTE'];
-                  return (
-                    <View key={i} style={styles.cardSubmissao}>
-                      <View style={styles.submissaoLinha}>
-                        <View style={[styles.submissaoIcone, { backgroundColor: cor + '20' }]}>
-                          <Ionicons name={icone} size={18} color={cor} />
-                        </View>
-                        <View style={styles.submissaoInfo}>
-                          <Text style={styles.submissaoTitulo}>{sub.titulo}</Text>
-                          <Text style={styles.submissaoMeta}>
-                            {sub.categoria} · {sub.dataEnvio} · {sub.horasInformadas}h
-                          </Text>
-                        </View>
-                        <View style={[styles.badgeStatus, { backgroundColor: cfg.bg }]}>
-                          <Text style={[styles.badgeStatusTexto, { color: cfg.cor }]}>{cfg.texto}</Text>
-                        </View>
-                      </View>
-                    </View>
-                  );
-                })}
-              </>
-            )}
 
             {atividades.length === 0 && (
               <View style={styles.vazioContainer}>
@@ -231,17 +210,6 @@ const styles = StyleSheet.create({
   categoriaHoras: { flexDirection: 'row', alignItems: 'baseline', marginLeft: 12 },
   categoriaHorasNumero: { fontSize: 16, fontWeight: 'bold' },
   categoriaHorasTotal: { fontSize: 12, color: '#9CA3AF' },
-  cardSubmissao: {
-    backgroundColor: '#FFFFFF', borderRadius: 14, padding: 14, marginBottom: 10,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
-  },
-  submissaoLinha: { flexDirection: 'row', alignItems: 'center' },
-  submissaoIcone: { width: 38, height: 38, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  submissaoInfo: { flex: 1 },
-  submissaoTitulo: { fontSize: 14, fontWeight: '700', color: '#111827', marginBottom: 2 },
-  submissaoMeta: { fontSize: 11, color: '#6B7280' },
-  badgeStatus: { borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4, marginLeft: 8 },
-  badgeStatusTexto: { fontSize: 11, fontWeight: '700' },
   vazioContainer: { alignItems: 'center', paddingVertical: 40, gap: 12 },
   vazioTexto: { fontSize: 15, color: '#9CA3AF' },
 });
