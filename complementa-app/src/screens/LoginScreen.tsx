@@ -15,7 +15,20 @@ import {
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import SeletorCurso from '../components/SeletorCurso';
+interface Curso {
+  id: string;
+  nome: string;
+}
+
 export default function LoginScreen() {
+  const [cursoEscolhido, setCursoEscolhido] = useState<Curso | null>(null);
+  const cursosDoAluno: Curso[] = [
+    { id: '1', nome: 'Análise e Desenvolvimento de Sistemas' },
+    { id: '2', nome: 'Engenharia de Software' },
+    { id: '3', nome: 'Rede de Computadores'},
+  ];
+
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const { setUser } = useAuth();
@@ -38,6 +51,8 @@ export default function LoginScreen() {
       setEmailErro(''); // Se estiver certo, tira o erro da tela
     }
   };
+  
+  // const roleCurso = 
 
   const handleLogin = async (): Promise<void> => {
     if (!email || !password) {
@@ -46,6 +61,10 @@ export default function LoginScreen() {
     }
     if (!regexEmail.test(email)) {
       Alert.alert("Atenção", "O formato do e-mail está incorreto.");
+      return;
+    }
+    if (!cursoEscolhido) {
+      Alert.alert('Por favor, selecione um curso para prosseguir.');
       return;
     }
 
@@ -125,6 +144,15 @@ export default function LoginScreen() {
               secureTextEntry={true} 
               value={password}
               onChangeText={setPassword}
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Curso</Text>
+            <SeletorCurso 
+              cursos={cursosDoAluno}
+              cursoSelecionado={cursoEscolhido}
+              onSelecionar={(curso) => setCursoEscolhido(curso)}
             />
           </View>
 
