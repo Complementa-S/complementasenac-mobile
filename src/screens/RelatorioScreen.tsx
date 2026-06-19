@@ -25,27 +25,28 @@ import Footer from '../components/Footer';
 
 type AbaFiltro = 'Todas' | SubmissionStatus;
 
-const ABAS: AbaFiltro[] = ['Todas', 'APROVADO', 'REPROVADO', 'PENDENTE'];
+const ABAS: AbaFiltro[] = ['Todas', 'APROVADO', 'INDEFERIDO', 'PENDENTE'];
 
 const LABEL_ABA: Record<AbaFiltro, string> = {
-  Todas:     'Todas',
-  APROVADO:  'Aprovado',
-  REPROVADO: 'Reprovado',
-  PENDENTE:  'Pendente',
+  Todas:      'Todas',
+  APROVADO:   'Aprovado',
+  REPROVADO:  'Reprovado',
+  INDEFERIDO: 'Indeferido',
+  PENDENTE:   'Pendente',
 };
 
 type StatusConfig = {
-  bg:     string;
-  texto:  string;
-  cor:    string;
-  icone:  string;
+  bg:    string;
+  texto: string;
+  cor:   string;
+  icone: string;
 };
 
 const STATUS_CONFIG: Record<SubmissionStatus, StatusConfig> = {
   APROVADO:   { bg: '#D1FAE5', texto: 'Aprovado',   cor: '#065F46', icone: 'checkmark-circle-outline' },
-  REPROVADO:  { bg: '#FEE2E2', texto: 'Reprovado',  cor: '#991B1B', icone: 'close-circle-outline'     },
-  PENDENTE:   { bg: '#FEF9C3', texto: 'Pendente',   cor: '#92400E', icone: 'time-outline'              },
+  REPROVADO:  { bg: '#FEE2E2', texto: 'Indeferido', cor: '#991B1B', icone: 'close-circle-outline'     },
   INDEFERIDO: { bg: '#FEE2E2', texto: 'Indeferido', cor: '#991B1B', icone: 'close-circle-outline'     },
+  PENDENTE:   { bg: '#FEF9C3', texto: 'Pendente',   cor: '#92400E', icone: 'time-outline'              },
 };
 
 const STATUS_FALLBACK: StatusConfig = STATUS_CONFIG['PENDENTE'];
@@ -62,9 +63,7 @@ function useAtividades() {
   useFocusEffect(
     useCallback(() => {
       if (!user) return;
-
       let cancelado = false;
-
       async function carregar() {
         try {
           setCarregando(true);
@@ -76,7 +75,6 @@ function useAtividades() {
           if (!cancelado) setCarregando(false);
         }
       }
-
       carregar();
       return () => { cancelado = true; };
     }, [user])
@@ -90,11 +88,13 @@ function useTotais(atividades: Submission[]) {
     .filter(a => a.status === 'APROVADO')
     .reduce((acc, a) => acc + (a.horasAprovadas || a.horasInformadas || 0), 0);
 
-  const aprovadas  = atividades.filter(a => a.status === 'APROVADO').length;
-  const pendentes  = atividades.filter(a => a.status === 'PENDENTE').length;
-  const reprovadas = atividades.filter(a => a.status === 'REPROVADO').length;
+  const aprovadas   = atividades.filter(a => a.status === 'APROVADO').length;
+  const pendentes   = atividades.filter(a => a.status === 'PENDENTE').length;
+  const indeferidas = atividades.filter(
+    a => a.status === 'INDEFERIDO' || a.status === 'REPROVADO'
+  ).length;
 
-  return { totalHoras, aprovadas, pendentes, reprovadas };
+  return { totalHoras, aprovadas, pendentes, indeferidas };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -114,13 +114,9 @@ function CardResumo({ icone, numero, label }: CardResumoItem) {
 }
 
 function AbaFiltroButton({
-  aba,
-  ativa,
-  onPress,
+  aba, ativa, onPress,
 }: {
-  aba: AbaFiltro;
-  ativa: boolean;
-  onPress: () => void;
+  aba: AbaFiltro; ativa: boolean; onPress: () => void;
 }) {
   return (
     <TouchableOpacity
@@ -135,13 +131,16 @@ function AbaFiltroButton({
 }
 
 function CardAtividade({
-  item,
-  onPress,
+  item, onPress,
 }: {
-  item: Submission;
-  onPress: () => void;
+  item: Submission; onPress: () => void;
 }) {
   const cfg = STATUS_CONFIG[item.status] ?? STATUS_FALLBACK;
+  const indeferido = item.status === 'INDEFERIDO' || item.status === 'REPROVADO';
+
+  const dataFormatada = item.dataEnvio
+    ? item.dataEnvio.slice(0, 10).split('-').reverse().join('/')
+    : '-';
 
   return (
     <TouchableOpacity
@@ -155,22 +154,28 @@ function CardAtividade({
         </View>
 
         <View style={styles.atividadeInfo}>
-          <Text style={styles.atividadeTitulo}>{item.titulo}</Text>
+          <Text style={styles.atividadeTitulo} numberOfLines={2}>{item.titulo}</Text>
           <Text style={styles.atividadeCategoria}>{item.categoria}</Text>
 
           <View style={[styles.badge, { backgroundColor: cfg.bg }]}>
             <Text style={[styles.badgeTexto, { color: cfg.cor }]}>{cfg.texto}</Text>
           </View>
 
-          {item.justificativaCoordenador ? (
+          {indeferido && item.justificativaCoordenador ? (
             <View style={styles.motivoContainer}>
-              <Text style={styles.motivoTexto}>Motivo: {item.justificativaCoordenador}</Text>
+              <View style={styles.motivoTitulo}>
+                <Ionicons name="alert-circle-outline" size={14} color="#991B1B" />
+                <Text style={styles.motivoTituloTexto}>Motivo do indeferimento</Text>
+              </View>
+              <Text style={styles.motivoTexto}>
+                {item.justificativaCoordenador}
+              </Text>
             </View>
           ) : null}
         </View>
 
         <View style={styles.atividadeDireita}>
-          <Text style={styles.atividadeData}>{item.dataEnvio}</Text>
+          <Text style={styles.atividadeData}>{dataFormatada}</Text>
           <Text style={styles.atividadeHoras}>{item.horasInformadas}h</Text>
           <Text style={styles.atividadeCategoriaTag}>{item.categoria}</Text>
         </View>
@@ -189,17 +194,17 @@ function InfoItem({ label, valor }: { label: string; valor: string }) {
 }
 
 function ModalDetalhes({
-  atividade,
-  visivel,
-  onFechar,
+  atividade, visivel, onFechar,
 }: {
-  atividade: Submission | null;
-  visivel: boolean;
-  onFechar: () => void;
+  atividade: Submission | null; visivel: boolean; onFechar: () => void;
 }) {
   if (!atividade) return null;
-
   const cfg = STATUS_CONFIG[atividade.status] ?? STATUS_FALLBACK;
+  const indeferido = atividade.status === 'INDEFERIDO' || atividade.status === 'REPROVADO';
+
+  const dataFormatada = atividade.dataEnvio
+    ? atividade.dataEnvio.slice(0, 10).split('-').reverse().join('/')
+    : '-';
 
   return (
     <Modal
@@ -232,7 +237,7 @@ function ModalDetalhes({
 
           <View style={styles.infoGrid}>
             <InfoItem label="Código"           valor={atividade.id} />
-            <InfoItem label="Data"             valor={atividade.dataEnvio} />
+            <InfoItem label="Data"             valor={dataFormatada} />
             <InfoItem label="Categoria"        valor={atividade.categoria} />
             <InfoItem label="Horas informadas" valor={`${atividade.horasInformadas}h`} />
             {atividade.horasAprovadas > 0 && (
@@ -240,16 +245,14 @@ function ModalDetalhes({
             )}
           </View>
 
-          {atividade.justificativaCoordenador ? (
+          {indeferido && atividade.justificativaCoordenador ? (
             <View style={styles.motivoModalContainer}>
-              <Ionicons
-                name="alert-circle-outline"
-                size={16}
-                color="#991B1B"
-                style={{ marginRight: 6 }}
-              />
+              <View style={styles.motivoTitulo}>
+                <Ionicons name="alert-circle-outline" size={15} color="#991B1B" />
+                <Text style={styles.motivoTituloTexto}>Motivo do indeferimento</Text>
+              </View>
               <Text style={styles.motivoModalTexto}>
-                Motivo: {atividade.justificativaCoordenador}
+                {atividade.justificativaCoordenador}
               </Text>
             </View>
           ) : null}
@@ -270,17 +273,22 @@ function ModalDetalhes({
 export default function RelatorioScreen() {
   const navigation = useNavigation<any>();
 
-  const { atividades, carregando }                       = useAtividades();
-  const { totalHoras, aprovadas, pendentes, reprovadas } = useTotais(atividades);
+  const { atividades, carregando }                        = useAtividades();
+  const { totalHoras, aprovadas, pendentes, indeferidas } = useTotais(atividades);
 
-  const [abaAtiva, setAbaAtiva]                           = useState<AbaFiltro>('Todas');
-  const [atividadeSelecionada, setAtividadeSelecionada]   = useState<Submission | null>(null);
-  const [modalVisivel, setModalVisivel]                   = useState(false);
+  const [abaAtiva, setAbaAtiva]                         = useState<AbaFiltro>('Todas');
+  const [atividadeSelecionada, setAtividadeSelecionada] = useState<Submission | null>(null);
+  const [modalVisivel, setModalVisivel]                 = useState(false);
 
   const atividadesFiltradas =
     abaAtiva === 'Todas'
       ? atividades
-      : atividades.filter(a => a.status === abaAtiva);
+      : atividades.filter(a => {
+          if (abaAtiva === 'INDEFERIDO') {
+            return a.status === 'INDEFERIDO' || a.status === 'REPROVADO';
+          }
+          return a.status === abaAtiva;
+        });
 
   function abrirDetalhes(item: Submission) {
     setAtividadeSelecionada(item);
@@ -303,7 +311,7 @@ export default function RelatorioScreen() {
               <Ionicons name="arrow-back-outline" size={24} color="#FFFFFF" />
             </TouchableOpacity>
             <Text style={styles.headerTitulo}>Histórico Completo</Text>
-            <Ionicons name="notifications-outline" size={24} color="#FFFFFF" />
+            <View style={{ width: 24 }} />
           </View>
           <Text style={styles.headerSubtitulo}>Todas as atividades submetidas</Text>
         </View>
@@ -340,7 +348,7 @@ export default function RelatorioScreen() {
             <View style={styles.listaCabecalho}>
               <Text style={styles.listaTitulo}>Timeline de atividades</Text>
               <Text style={styles.listaSubtitulo}>
-                {aprovadas} aprovadas · {reprovadas} reprovadas
+                {aprovadas} aprovadas · {indeferidas} indeferidas
               </Text>
             </View>
 
@@ -380,96 +388,110 @@ export default function RelatorioScreen() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  container:           { flex: 1, backgroundColor: '#F3F4F6' },
+  container:       { flex: 1, backgroundColor: '#F3F4F6' },
   headerAzul: {
-    backgroundColor: '#004C94',
-    paddingTop: 60,
-    paddingHorizontal: 24,
-    paddingBottom: 24,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+    backgroundColor: '#004C94', paddingTop: 60, paddingHorizontal: 24, paddingBottom: 24,
+    borderBottomLeftRadius: 30, borderBottomRightRadius: 30,
   },
-  linhaSuperior:       { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
-  headerTitulo:        { fontSize: 18, fontWeight: 'bold', color: '#FFFFFF' },
-  headerSubtitulo:     { fontSize: 13, color: '#93C5FD', textAlign: 'center' },
-  resumoContainer:     { flexDirection: 'row', paddingHorizontal: 20, paddingTop: 16, gap: 10 },
+  linhaSuperior:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  headerTitulo:    { fontSize: 18, fontWeight: 'bold', color: '#FFFFFF' },
+  headerSubtitulo: { fontSize: 13, color: '#93C5FD', textAlign: 'center' },
+  resumoContainer: { flexDirection: 'row', paddingHorizontal: 20, paddingTop: 16, gap: 10 },
   cardResumo: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 14,
-    alignItems: 'flex-start',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    flex: 1, backgroundColor: '#FFFFFF', borderRadius: 14, padding: 14, alignItems: 'flex-start',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2,
   },
-  resumoNumero:        { fontSize: 22, fontWeight: 'bold', color: '#111827' },
-  resumoLabel:         { fontSize: 11, color: '#6B7280', marginTop: 2 },
-  abasScroll:          { maxHeight: 50, marginTop: 14 },
-  abasContainer:       { paddingHorizontal: 20, gap: 8, alignItems: 'center' },
-  aba:                 { paddingHorizontal: 16, paddingVertical: 7, borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E5E7EB' },
-  abaAtiva:            { backgroundColor: '#004C94', borderColor: '#004C94' },
-  abaTexto:            { fontSize: 13, color: '#6B7280', fontWeight: '500' },
-  abaTextoAtivo:       { color: '#FFFFFF', fontWeight: '700' },
-  loadingContainer:    { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 },
-  loadingTexto:        { fontSize: 14, color: '#6B7280' },
-  vazioContainer:      { alignItems: 'center', paddingTop: 60, gap: 12 },
-  vazioTexto:          { fontSize: 15, color: '#9CA3AF' },
-  lista:               { flex: 1, paddingHorizontal: 20, marginTop: 14 },
-  listaCabecalho:      { marginBottom: 12 },
-  listaTitulo:         { fontSize: 15, fontWeight: '700', color: '#111827' },
-  listaSubtitulo:      { fontSize: 12, color: '#6B7280', marginTop: 2 },
+  resumoNumero:    { fontSize: 22, fontWeight: 'bold', color: '#111827' },
+  resumoLabel:     { fontSize: 11, color: '#6B7280', marginTop: 2 },
+  abasScroll:      { maxHeight: 50, marginTop: 14 },
+  abasContainer:   { paddingHorizontal: 20, gap: 8, alignItems: 'center' },
+  aba:             { paddingHorizontal: 16, paddingVertical: 7, borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E5E7EB' },
+  abaAtiva:        { backgroundColor: '#004C94', borderColor: '#004C94' },
+  abaTexto:        { fontSize: 13, color: '#6B7280', fontWeight: '500' },
+  abaTextoAtivo:   { color: '#FFFFFF', fontWeight: '700' },
+  loadingContainer:{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 },
+  loadingTexto:    { fontSize: 14, color: '#6B7280' },
+  vazioContainer:  { alignItems: 'center', paddingTop: 60, gap: 12 },
+  vazioTexto:      { fontSize: 15, color: '#9CA3AF' },
+  lista:           { flex: 1, paddingHorizontal: 20, marginTop: 14 },
+  listaCabecalho:  { marginBottom: 12 },
+  listaTitulo:     { fontSize: 15, fontWeight: '700', color: '#111827' },
+  listaSubtitulo:  { fontSize: 12, color: '#6B7280', marginTop: 2 },
+
   cardAtividade: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    backgroundColor: '#FFFFFF', borderRadius: 14, padding: 14, marginBottom: 10,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
   },
-  atividadeLinha:       { flexDirection: 'row', alignItems: 'flex-start' },
+  atividadeLinha:  { flexDirection: 'row', alignItems: 'flex-start', flexWrap: 'nowrap' },
   atividadeIcone: {
-    backgroundColor: '#EFF6FF',
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-    marginTop: 2,
+    backgroundColor: '#EFF6FF', width: 36, height: 36, borderRadius: 10,
+    justifyContent: 'center', alignItems: 'center', marginRight: 12, marginTop: 2,
+    flexShrink: 0,
   },
-  atividadeInfo:         { flex: 1 },
-  atividadeTitulo:       { fontSize: 14, fontWeight: '700', color: '#111827', marginBottom: 2 },
-  atividadeCategoria:    { fontSize: 12, color: '#6B7280', marginBottom: 6 },
-  badge:                 { alignSelf: 'flex-start', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 3, marginBottom: 4 },
-  badgeTexto:            { fontSize: 11, fontWeight: '700' },
-  motivoContainer:       { backgroundColor: '#FEE2E2', borderRadius: 8, padding: 8, marginTop: 4 },
-  motivoTexto:           { fontSize: 12, color: '#991B1B' },
-  atividadeDireita:      { alignItems: 'flex-end', minWidth: 70 },
+  atividadeInfo:      { flex: 1, minWidth: 0 },
+  atividadeTitulo:    { fontSize: 14, fontWeight: '700', color: '#111827', marginBottom: 2 },
+  atividadeCategoria: { fontSize: 12, color: '#6B7280', marginBottom: 6 },
+  badge:              { alignSelf: 'flex-start', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 3, marginBottom: 6 },
+  badgeTexto:         { fontSize: 11, fontWeight: '700' },
+
+  motivoContainer: {
+    backgroundColor: '#FEF2F2',
+    borderRadius: 10,
+    borderLeftWidth: 3,
+    borderLeftColor: '#991B1B',
+    padding: 10,
+    marginTop: 4,
+    alignSelf: 'stretch',
+    flexShrink: 1,
+  },
+  motivoTitulo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 4,
+    flexWrap: 'wrap',
+  },
+  motivoTituloTexto: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#991B1B',
+    flexShrink: 1,
+  },
+  motivoTexto: {
+    fontSize: 13,
+    color: '#7F1D1D',
+    lineHeight: 19,
+    flexShrink: 1,
+  },
+
+  atividadeDireita:      { alignItems: 'flex-end', minWidth: 60, flexShrink: 0, marginLeft: 8 },
   atividadeData:         { fontSize: 11, color: '#9CA3AF', marginBottom: 4 },
   atividadeHoras:        { fontSize: 14, fontWeight: '700', color: '#111827', marginBottom: 4 },
   atividadeCategoriaTag: { fontSize: 11, color: '#3B82F6', fontWeight: '500' },
-  modalOverlay:          { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
-  modalContainer:        { backgroundColor: '#FFFFFF', borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, paddingBottom: 36 },
-  modalHandle:           { width: 40, height: 4, backgroundColor: '#E5E7EB', borderRadius: 2, alignSelf: 'center', marginBottom: 20 },
-  modalHeader:           { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
-  modalIcone:            { backgroundColor: '#EFF6FF', width: 48, height: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
-  modalFechar:           { backgroundColor: '#F3F4F6', width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
-  modalTitulo:           { fontSize: 20, fontWeight: 'bold', color: '#111827', marginBottom: 10 },
-  badgeModal:            { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 5, marginBottom: 16 },
-  badgeModalTexto:       { fontSize: 13, fontWeight: '700' },
-  divisor:               { height: 1, backgroundColor: '#F3F4F6', marginBottom: 16 },
-  infoGrid:              { flexDirection: 'row', flexWrap: 'wrap', gap: 14, marginBottom: 16 },
-  infoItem:              { width: '45%' },
-  infoLabel:             { fontSize: 11, color: '#9CA3AF', fontWeight: '600', textTransform: 'uppercase', marginBottom: 3 },
-  infoValor:             { fontSize: 14, fontWeight: '600', color: '#111827' },
-  motivoModalContainer:  { flexDirection: 'row', alignItems: 'flex-start', backgroundColor: '#FEE2E2', borderRadius: 10, padding: 12, marginBottom: 20 },
-  motivoModalTexto:      { fontSize: 13, color: '#991B1B', flex: 1, lineHeight: 18 },
-  btnFechar:             { backgroundColor: '#004C94', borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 8 },
-  btnFecharTexto:        { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
+
+  modalOverlay:    { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
+  modalContainer:  { backgroundColor: '#FFFFFF', borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, paddingBottom: 36 },
+  modalHandle:     { width: 40, height: 4, backgroundColor: '#E5E7EB', borderRadius: 2, alignSelf: 'center', marginBottom: 20 },
+  modalHeader:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
+  modalIcone:      { backgroundColor: '#EFF6FF', width: 48, height: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
+  modalFechar:     { backgroundColor: '#F3F4F6', width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
+  modalTitulo:     { fontSize: 20, fontWeight: 'bold', color: '#111827', marginBottom: 10 },
+  badgeModal:      { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 5, marginBottom: 16 },
+  badgeModalTexto: { fontSize: 13, fontWeight: '700' },
+  divisor:         { height: 1, backgroundColor: '#F3F4F6', marginBottom: 16 },
+  infoGrid:        { flexDirection: 'row', flexWrap: 'wrap', gap: 14, marginBottom: 16 },
+  infoItem:        { width: '45%' },
+  infoLabel:       { fontSize: 11, color: '#9CA3AF', fontWeight: '600', textTransform: 'uppercase', marginBottom: 3 },
+  infoValor:       { fontSize: 14, fontWeight: '600', color: '#111827' },
+  motivoModalContainer: {
+    backgroundColor: '#FEF2F2',
+    borderRadius: 10,
+    borderLeftWidth: 3,
+    borderLeftColor: '#991B1B',
+    padding: 12,
+    marginBottom: 20,
+  },
+  motivoModalTexto: { fontSize: 13, color: '#7F1D1D', lineHeight: 19 },
+  btnFechar:       { backgroundColor: '#004C94', borderRadius: 14, paddingVertical: 14, alignItems: 'center', marginTop: 8 },
+  btnFecharTexto:  { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
 });
