@@ -84,14 +84,14 @@ export default function CargaComplementarScreen() {
       <View style={styles.container}>
         <StatusBar barStyle="light-content" backgroundColor="#004C94" />
 
-        <View style={styles.headerAzul}>
-          <View style={styles.linhaSuperior}>
-            <TouchableOpacity onPress={() => navigation.goBack()}>
-              <Ionicons name="arrow-back-outline" size={24} color="#FFFFFF" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitulo}>Carga Complementar</Text>
-            <Ionicons name="notifications-outline" size={24} color="#FFFFFF" />
-          </View>
+         <View style={styles.headerAzul}>
+                <View style={styles.linhaSuperior}>
+               <TouchableOpacity onPress={() => navigation.goBack()}>
+               <Ionicons name="arrow-back-outline" size={24} color="#FFFFFF" />
+             </TouchableOpacity>
+             <Text style={styles.headerTitulo}>Carga Complementar</Text>
+            <View style={{ width: 24 }} />
+        </View>
         </View>
 
         {carregando ? (
