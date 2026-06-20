@@ -28,7 +28,10 @@ const normalizeRole = (perfil: string): UserRole => {
 
 const normalizeStatus = (value: unknown): Submission['status'] => {
   const s = text(value).trim().toUpperCase();
-  if (s === 'APROVADO' || s === 'REPROVADO' || s === 'PENDENTE') return s;
+  if (s === 'APROVADO')   return 'APROVADO';
+  if (s === 'REPROVADO')  return 'REPROVADO';
+  if (s === 'INDEFERIDO') return 'INDEFERIDO';
+  if (s === 'PENDENTE')   return 'PENDENTE';
   return 'PENDENTE';
 };
 
